@@ -1,0 +1,3601 @@
+{
+  "meta": {
+    "name": "invest-v281 功能神经网络",
+    "version": "2.9.54",
+    "created": "2026-09-06",
+    "description": "系统级功能依赖图谱，用于变更影响分析、测试路径遍历、文档一致性检测",
+    "node_count": 48,
+    "edge_count": 127,
+    "last_updated": "2026-09-07"
+  },
+  "layers": [
+    {
+      "id": "data",
+      "name": "数据采集层",
+      "color": "#3B82F6"
+    },
+    {
+      "id": "business",
+      "name": "核心业务层",
+      "color": "#8B5CF6"
+    },
+    {
+      "id": "display",
+      "name": "展示层",
+      "color": "#10B981"
+    },
+    {
+      "id": "system",
+      "name": "系统层",
+      "color": "#F59E0B"
+    },
+    {
+      "id": "process",
+      "name": "流程管控层",
+      "color": "#06B6D4"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "data_source",
+      "name": "数据源管理",
+      "layer": "data",
+      "status": "healthy",
+      "version": "2.9.14",
+      "description": "三数据源切换与降级：同花顺API主源 + pingzhongdata + 天天基金网，多源并行抓取",
+      "check_points": [
+        "同花顺API主源正常，并发≤5，间隔0.2秒",
+        "pingzhongdata第二源正常，并发≤8，间隔0.1秒",
+        "天天基金网备用源正常，并发≤8，间隔0.08秒",
+        "主源失败自动降级到第二源，第二源失败降级到备用源",
+        "缺口>1000只且min_history_days>0时触发多源并行",
+        "API key配置正确，不硬编码在代码中"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-DS-001",
+          "status": "resolved",
+          "description": "同花顺API限流导致批量抓取失败",
+          "found_version": "v2.9.14",
+          "fixed_version": "v2.9.14",
+          "solution": "增加并发限制和请求间隔，缺口大时自动切换多源并行",
+          "severity": "medium"
+        }
+      ],
+      "code_files": [
+        "backend/modules/nav/multi_source_fetcher.py",
+        "backend/modules/nav/fetcher.py"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#3.8-链路D-数据源集成与降级机制"
+      ],
+      "config_keys": [
+        "THS_API_KEY",
+        "THS_CONCURRENCY",
+        "THS_INTERVAL",
+        "MULTI_SOURCE_THRESHOLD"
+      ],
+      "last_verified": "2026-09-06",
+      "verify_result": "pass"
+    },
+    {
+      "id": "fund_universe",
+      "name": "基金代码库",
+      "layer": "data",
+      "status": "healthy",
+      "version": "2.9.14",
+      "description": "全市场C类基金池，剔除债券型、货币型、持有期（3月/6月/1年）基金",
+      "check_points": [
+        "全市场基金数量约6000+只",
+        "已剔除A类基金，只保留C类",
+        "已剔除债券型、货币型基金",
+        "已剔除持有期基金（3个月/6个月/1年）",
+        "基金名称、代码、类型字段完整",
+        "新基金自动入库"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-FU-001",
+          "status": "resolved",
+          "description": "候选池大小误判为500-1000只",
+          "found_version": "v2.9.14",
+          "fixed_version": "v2.9.14",
+          "solution": "纠正为全市场6000+只，区分全量池和精选池",
+          "severity": "high"
+        }
+      ],
+      "code_files": [
+        "backend/modules/fund/universe.py",
+        "backend/modules/common/pipeline.py"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#3.8-链路A-一键更新数据"
+      ],
+      "config_keys": [
+        "EXCLUDE_FUND_TYPES",
+        "EXCLUDE_HOLDING_PERIOD"
+      ],
+      "last_verified": "2026-09-06",
+      "verify_result": "pass"
+    },
+    {
+      "id": "nav_fetch",
+      "name": "净值抓取",
+      "layer": "data",
+      "status": "warning",
+      "version": "2.9.21",
+      "description": "增量抓取净值数据，历史数据不足250天自动补全，缺口大时多源并行",
+      "check_points": [
+        "增量抓取当日净值正常",
+        "历史数据不足250天的自动补全",
+        "缺口>1000只时触发多源并行抓取",
+        "异常值检测：单日涨跌幅>±10%告警",
+        "日期连续性检查：间隔>7天告警",
+        "三数据源交叉验证",
+        "抓取失败自动重试，记录失败日志",
+        "连续两天净值相同检测：标记为suspect，不计算d1=0"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-NAV-001",
+          "status": "resolved",
+          "description": "原以为是非交易日缓存问题，实际诊断发现1075只基金在交易日（2026-09-04）就存在连续两天净值相同的问题，导致d1=0。根因是数据源数据质量，不是非交易日。",
+          "found_version": "v2.9.13",
+          "fixed_version": null,
+          "root_cause": "数据源返回的净值数据有重复或延迟",
+          "solution": "新增data_quality节点，检测连续两天净值相同并标记为suspect",
+          "severity": "high",
+          "resolved_at": "2026-09-06",
+          "resolution": "数据源质量已恢复，当前数据库6021只基金全部为ok状态，suspect基金为0。data_quality.py的check_nav_duplicate函数正常工作，suspect基金d1=None不参与排名。"
+        },
+        {
+          "id": "ISSUE-NAV-002",
+          "status": "resolved",
+          "description": "历史数据不足导致指标计算错误",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.14",
+          "solution": "v2.9.14增加min_history_days=250，自动补全历史数据",
+          "severity": "high"
+        }
+      ],
+      "code_files": [
+        "backend/modules/nav/fetcher.py",
+        "backend/modules/nav/multi_source_fetcher.py",
+        "backend/modules/nav/history_backfill.py"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#3.8-链路A-一键更新数据"
+      ],
+      "config_keys": [
+        "MIN_HISTORY_DAYS",
+        "MULTI_SOURCE_THRESHOLD",
+        "NAV_ANOMALY_THRESHOLD"
+      ],
+      "last_verified": "2026-09-06",
+      "verify_result": "verified",
+      "verify_note": "v2.9.24一致性检查：净值抓取正常，数据质量问题已解决，当前suspect基金为0"
+    },
+    {
+      "id": "data_quality",
+      "name": "数据质量校验",
+      "layer": "data",
+      "status": "pending",
+      "version": "2.9.21",
+      "description": "净值数据质量检测：连续两天净值相同标记、多源交叉验证、异常值检测、数据新鲜度校验",
+      "check_points": [
+        "连续两天净值完全相同检测：标记为suspect，d1设为None",
+        "多源交叉验证：同花顺与天天基金网净值差异>0.1%标记为conflict",
+        "异常值检测：单日涨跌幅>±10%告警",
+        "数据新鲜度校验：nav_date必须是最近3个交易日内",
+        "日期连续性检查：间隔>7天告警",
+        "d1=0与真实零涨跌幅区分：suspect状态显示'—'而非'0.00%'",
+        "一键更新时统计suspect/conflict数量，超过5%告警"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-DQ-001",
+          "status": "resolved",
+          "description": "2026-09-04数据中1075只基金（占18%）连续两天净值完全相同，导致d1计算为0。根因是数据源返回的净值数据有重复或延迟，非交易日问题。",
+          "found_version": "v2.9.18",
+          "solution": "新增data_quality节点，检测连续两天净值相同并标记为suspect，d1设为None，前端显示'—'",
+          "severity": "high",
+          "resolved_at": "2026-09-06",
+          "resolution": "数据源质量已恢复，当前数据库6021只基金全部为ok状态，suspect基金为0。data_quality模块正常工作，check_nav_duplicate/full_quality_check在rank_full和pipeline中都被调用。"
+        }
+      ],
+      "code_files": [
+        "backend/modules/common/data_quality.py",
+        "backend/modules/nav/multi_source_fetcher.py",
+        "backend/analysis_pipeline/night_fund_monitor.py"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#3.8-数据质量校验"
+      ],
+      "config_keys": [
+        "NAV_DUPLICATE_THRESHOLD",
+        "MULTI_SOURCE_DIFF_THRESHOLD",
+        "DATA_QUALITY_ALERT_RATIO"
+      ],
+      "last_verified": "2026-09-06",
+      "verify_result": "verified",
+      "verify_note": "v2.9.24一致性检查：数据质量校验模块正常工作，check_nav_duplicate检测连续两天净值相同，suspect基金d1=None。当前suspect基金为0"
+    },
+    {
+      "id": "holdings_fetch",
+      "name": "持仓抓取",
+      "layer": "data",
+      "status": "healthy",
+      "version": "2.9.21",
+      "description": "抓取基金前十大持仓，自动识别主题板块和行业标签",
+      "check_points": [
+        "前十大持仓数据完整",
+        "持仓股票名称、代码、占比字段完整",
+        "主题板块标签自动识别正确",
+        "行业分类标签正确",
+        "持仓数据更新频率合理（季度更新）"
+      ],
+      "known_issues": [],
+      "code_files": [
+        "backend/modules/fund/holdings.py"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#3.8-链路A-一键更新数据"
+      ],
+      "config_keys": [
+        "holdings_cache_ttl"
+      ],
+      "last_verified": "2026-09-06",
+      "verify_result": "pending"
+    },
+    {
+      "id": "metrics_calc",
+      "name": "指标计算",
+      "layer": "data",
+      "status": "healthy",
+      "version": "2.9.45",
+      "description": "基于净值计算m1/m3/m6/y1涨幅、最大回撤、夏普、卡玛、索提诺等指标",
+      "check_points": [
+        "m1/m3/m6/y1涨幅计算正确",
+        "近6月/近1年最大回撤计算正确",
+        "夏普比率计算正确（无风险收益率2.5%）",
+        "卡玛比率计算正确（近2月收益/近2月最大回撤）",
+        "索提诺比率（下行夏普率）计算正确",
+        "上涨捕获率/下跌捕获率计算正确",
+        "盈利稳定性计算正确",
+        "数据不足时显示'—'，不显示错误数值",
+        "所有基金指标完整，不只是m1",
+        "数据质量感知：suspect状态的基金d1设为None，不参与排名计算",
+        "v2.9.43: 分数算法全局统一，废弃calc_scores旧算法，所有页面统一使用compute_scores_v2数据库分数",
+        "唯一分数来源：一键更新阶段4 recompute_ad 批量调用 compute_scores_v2 计算后写入数据库",
+        "所有消费方（卡片/弹窗/对比页/夜间监控）都直接从数据库读取，不再实时计算"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-MET-001",
+          "status": "resolved",
+          "description": "compute_fund_metrics导入错误导致指标全空",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.13",
+          "solution": "修复_max_dd/_daily_rets/_pstdev导入路径，从collector.ranker改为modules.common.metrics",
+          "severity": "high"
+        },
+        {
+          "id": "ISSUE-MET-002",
+          "status": "resolved",
+          "description": "只计算m1不计算m3/m6/y1",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.13",
+          "solution": "compute_fund_metrics增加m3/m6/y1计算，page_size从60改为250",
+          "severity": "high"
+        },
+        {
+          "id": "ISSUE-MET-003",
+          "status": "resolved",
+          "description": "卡玛比率口径不一致",
+          "found_version": "v2.9.13",
+          "fixed_version": "v2.9.14",
+          "solution": "统一为近2月收益/近2月最大回撤",
+          "severity": "medium"
+        },
+        {
+          "id": "ISSUE-MET-004",
+          "status": "resolved",
+          "description": "索提诺比率命名错误",
+          "found_version": "v2.9.13",
+          "fixed_version": "v2.9.14",
+          "solution": "更正为下行夏普率，计算口径不变",
+          "severity": "low"
+        }
+      ],
+      "code_files": [
+        "backend/modules/rank/ranker.py",
+        "backend/modules/common/metrics.py",
+        "backend/collector/metrics.py",
+        "backend/modules/rank/rank_full.py"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#3.7-链路C-超跌筑底榜"
+      ],
+      "config_keys": [
+        "RISK_FREE_RATE",
+        "CALMAR_PERIOD_DAYS"
+      ],
+      "last_verified": "2026-09-07 13:30:03",
+      "verify_result": "pass",
+      "verify_note": "v2.9.24一致性检查：卡玛比率=近2月收益/近2月最大回撤，索提诺比率=down_sharpe（下行夏普率），口径正确。code_files补充ranker.py（calc_metrics实际实现位置）"
+    },
+    {
+      "id": "one_click_update",
+      "name": "一键更新",
+      "layer": "business",
+      "status": "healthy",
+      "version": "2.9.45",
+      "description": "6阶段一键更新流程：日期判断→抓净值+基础指标→重排榜单→抓取补充数据+自选指标→上榜+自选统一计算→同步榜单；第1阶段pipeline对全池6000只计算基础指标（d1/d2/d3/d5/d7/d10、m1/m3/m6/y1、max_dd/vol/sharpe等），不算reco/ad_score；第2阶段rank_full先排12个不需要ad_score的榜得上榜池约300只，算简化ad_score排抗跌榜；第3阶段抓取上榜+自选约400只的持仓主题+2年历史净值（不重复抓m1/m3/m6/y1）；第4阶段recompute_ad对上榜+自选约400只做精确计算：reco+reco_days 75天精确回放（唯一计算点）+ ad_score/earn_score/score精确算法；第5阶段同步榜单。统一读取接口fund_service.get_fund_full_data用SELECT*保证字段完整性，根治d1/d2漏读。",
+      "check_points": [
+        "6阶段流程完整执行（日期判断→抓净值→重排榜单→抓取补充数据→上榜+自选统一计算→同步榜单）",
+        "PHASES数组定义为6个阶段，与实际执行流程一致",
+        "非交易日正确识别，不重复抓取",
+        "候选池构建正确（全市场C类，剔除债券/货币/持有期/A类/长期持有）",
+        "净值抓取阶段正常，增量模式自动跳过缓存最新的基金",
+        "抓取补充数据阶段正常（自选+上榜基金持仓 + 2年历史净值，m1/m3/m6/y1已由阶段1净值计算不重复抓取）",
+        "重排榜单阶段正常，rank_full.compute_all_panels全量重算13个子榜",
+        "计算榜单基金完整指标阶段正常（m1/m3/m6/y1/回撤/夏普/卡玛/索提诺等）",
+        "计算自选基金完整指标阶段正常（排除已在榜单中的基金）",
+        "算推荐信号阶段正常（V3.2，仅上榜+自选）",
+        "同步榜单阶段正常，更新数据版本戳通知前端缓存失效",
+        "支持停止更新操作",
+        "实时进度日志显示正常，6阶段进度正确",
+        "【重要】所有日志输出中的[阶段X/Y]格式必须统一为6阶段（[阶段1/6]到[阶段6/6]），不得出现[阶段X/8]或[阶段X/5]等旧格式",
+        "【重要】phase_idx映射正确，_progress_cb回调中的阶段编号与PHASES数组索引一致",
+        "【重要】start初始状态正确，phase_total=6",
+        "数据库重建后初始化正常，investment_records和portfolio表自动创建",
+        "部署包打包时自动排除数据库文件（*.db及备份文件）和日志文件",
+        "【重要】阶段执行顺序正确：重排榜单（阶段3）必须在抓取补充数据（阶段4）之前执行，确保_fetch_top_holdings能查询到当日上榜基金数据",
+        "【重要】_fetch_top_holdings执行时机正确：必须在rank_full.compute_all_panels之后，确保rf变量已定义且rank_snapshots表中有当日上榜数据",
+        "【重要】一键更新后上榜基金持仓数据完整性：上榜基金的themes字段非空率≥95%，stocks字段非空率≥90%（新基金成立时间不足除外）",
+        "【重要】清理long_series缓存时rf变量已定义：必须在重排榜单之后执行，避免NameError导致缓存清理失败",
+        "【重要】PHASES数组顺序与实际执行顺序一致：重排榜单(索引2)在抓取补充数据(索引3)之前",
+        "一键更新后，卡片/弹窗/对比页数据源一致，无指标差异",
+        "v2.9.43: 阶段4 recompute_ad 是唯一分数来源，调用 compute_scores_v2 批量计算后写入数据库",
+        "所有页面分数一致性依赖一键更新完成后数据库中的分数",
+        "【重要】v2.9.44: reco唯一计算点在阶段4 recompute_ad（上榜+自选约400只，75天精确回放），pipeline阶段1不再算reco",
+        "【重要】v2.9.44: 阶段3不重复抓取m1/m3/m6/y1（已由阶段1用净值历史计算），_fetch_top_returns调用已删除",
+        "【重要】v2.9.44: recompute_ad的UPDATE语句包含reco/reco_score/reco_days/prev_reco/prev_reco_days字段",
+        "【重要】v2.9.44: 统一读取接口fund_service.get_fund_full_data用SELECT*，所有页面统一调用，杜绝字段漏读",
+        "【重要】v2.9.44: anti_detail和compare的收益指标列表包含d1/d2，数据库d1=0的基金API返回0.0而非None",
+        "v2.9.44: 一键更新后上榜+自选基金的reco/reco_days非空，ad_score/earn_score/score为精确算法结果",
+        "v2.9.45: 阶段1写funds表改用bulk_upsert_funds批量写入, commit次数从6000降到1, 解决database is locked"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-OCU-001",
+          "status": "resolved",
+          "description": "一键更新后榜单排名不对",
+          "found_version": "v2.9.11",
+          "fixed_version": "v2.9.12",
+          "solution": "修复榜单计算排序逻辑，基于新榜单重新排列",
+          "severity": "high"
+        },
+        {
+          "id": "ISSUE-OCU-002",
+          "status": "resolved",
+          "description": "基于旧榜单排列，新基金无法上榜",
+          "found_version": "v2.9.13",
+          "fixed_version": "v2.9.14",
+          "solution": "优化候选池策略，先全量抓取再排名，不依赖旧榜单",
+          "severity": "high"
+        }
+      ],
+      "code_files": [
+        "backend/modules/common/fetch_manager.py",
+        "backend/modules/common/pipeline.py",
+        "backend/main.py"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#3.8-链路A-一键更新数据"
+      ],
+      "config_keys": [
+        "UPDATE_STAGES",
+        "RANK_SUB_PANEL_COUNT"
+      ],
+      "last_verified": "2026-09-07T04:45:00",
+      "verify_result": "verified",
+      "verify_note": "v2.9.44: reco从阶段1移到阶段4只算一次，阶段3删除m1/m3/m6/y1重复抓取，新建fund_service统一接口根治d1/d2漏读。anti_detail API验证001174 d1=0.0正确返回。"
+    },
+    {
+      "id": "rank_calc",
+      "name": "榜单计算",
+      "layer": "business",
+      "status": "healthy",
+      "version": "2.9.51",
+      "description": "日榜5子榜+推荐榜4子榜+攻防榜4子榜，共13个子榜，各40只",
+      "check_points": [
+        "日榜5子榜各40只：当日/三日/七日/近2周/综合",
+        "推荐榜4子榜各40只：抗跌/自选/质量/超跌筑底",
+        "攻防榜4子榜各40只：高弹性/攻守兼备/强抗跌/反弹先锋",
+        "排名降序正确",
+        "抗跌榜：上榜基金池，抗跌分50%+收益分50%",
+        "自选榜：全量funds，多因子加权",
+        "质量榜：全市场C类，下行夏普30%+卡玛25%+盈利稳定性15%-下跌捕获15%+上涨捕获15%",
+        "超跌筑底榜：急跌20+RPS弱势10+低位25+筑底35+赛道10，均线粘合加分",
+        "高弹性榜：β>阈值+上涨捕获率>阈值+趋势强度>0",
+        "反弹先锋榜：近20日跌幅>阈值+近5日涨幅>阈值，ETF额外要求突破20日高点+均线多头",
+        "筛选条件严格匹配，不满足的不入选"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-RC-001",
+          "status": "resolved",
+          "description": "推荐榜单还是旧的ETF榜，未替换为超跌筑底榜",
+          "found_version": "v2.9.11",
+          "fixed_version": "v2.9.12",
+          "solution": "v2.9.12重构4榜单，ETF榜替换为超跌筑底榜",
+          "severity": "high"
+        },
+        {
+          "id": "ISSUE-RC-002",
+          "status": "resolved",
+          "description": "质量榜评分公式旧",
+          "found_version": "v2.9.11",
+          "fixed_version": "v2.9.12",
+          "solution": "更新为下行夏普30%+卡玛25%+盈利稳定性15%-下跌捕获15%+上涨捕获15%",
+          "severity": "medium"
+        },
+        {
+          "id": "ISSUE-RC-003",
+          "status": "resolved",
+          "description": "超跌筑底榜缺少RPS弱势和均线粘合",
+          "found_version": "v2.9.11",
+          "fixed_version": "v2.9.12",
+          "solution": "增加RPS弱势10分，均线粘合加分，权重调整为急跌20+RPS10+低位25+筑底35+赛道10",
+          "severity": "medium"
+        },
+        {
+          "id": "ISSUE-RC-004",
+          "status": "resolved",
+          "description": "高弹性榜缺少趋势强度过滤",
+          "found_version": "v2.9.11",
+          "fixed_version": "v2.9.12",
+          "solution": "增加趋势强度>0过滤，过滤下跌趋势",
+          "severity": "medium"
+        },
+        {
+          "id": "ISSUE-RC-005",
+          "status": "resolved",
+          "description": "反弹先锋ETF缺少突破高点和均线多头要求",
+          "found_version": "v2.9.11",
+          "fixed_version": "v2.9.12",
+          "solution": "ETF额外要求突破20日高点+均线多头",
+          "severity": "medium"
+        }
+      ],
+      "code_files": [
+        "backend/modules/rank/rank_full.py",
+        "backend/modules/rank/ranker.py",
+        "backend/algo_config.py",
+        "backend/modules/rank/router.py"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#3.7-链路A-榜单面板与Tab切换",
+        "CHAIN_TEST_MANUAL.md#3.7-链路B-攻防榜四特征榜",
+        "CHAIN_TEST_MANUAL.md#3.7-链路C-超跌筑底榜"
+      ],
+      "config_keys": [
+        "cd_crash_k",
+        "cd_rps_threshold",
+        "atk_beta_threshold",
+        "atk_capture_threshold",
+        "rebound_20d_drop_threshold",
+        "rebound_5d_rise_threshold"
+      ],
+      "last_verified": "2026-09-07 13:30:03",
+      "verify_result": "needs_recheck",
+      "verify_note": "v2.9.24一致性检查：13个子榜（day×5 + reco×4 + attack×4）与神经网络描述一致。代码注释\"10个sub\"过时但不影响功能"
+    },
+    {
+      "id": "watchlist",
+      "name": "自选管理",
+      "layer": "business",
+      "status": "healthy",
+      "version": "2.9.51",
+      "description": "自选基金增删改查，支持右滑加入对比，对比基金选择",
+      "check_points": [
+        "自选基金列表正常显示",
+        "添加自选功能正常",
+        "删除自选功能正常",
+        "自选基金数据实时更新",
+        "右滑显示加入对比按钮",
+        "对比基金选择功能正常",
+        "自选基金卡片与榜单基金卡片样式一致"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-WL-001",
+          "status": "resolved",
+          "description": "自选基金卡片宽度与榜单不一致",
+          "found_version": "v2.9.11",
+          "fixed_version": "v2.9.13",
+          "solution": "统一基金卡片组件，自选和榜单共用同一套FundCard",
+          "severity": "medium"
+        },
+        {
+          "id": "ISSUE-WL-002",
+          "status": "resolved",
+          "description": "复选框未显示，对比触发不明确",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.13",
+          "solution": "改为右滑显示加入对比按钮，底部出现开始对比按钮",
+          "severity": "medium"
+        }
+      ],
+      "code_files": [
+        "src/views/WatchView.vue",
+        "src/stores/watch.ts"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#3.6-链路B-自选基金管理"
+      ],
+      "config_keys": [
+        "watch_detail_cache_ttl"
+      ],
+      "last_verified": "2026-09-07 13:30:03",
+      "verify_result": "needs_recheck"
+    },
+    {
+      "id": "compare",
+      "name": "对比分析",
+      "layer": "business",
+      "status": "healthy",
+      "version": "2.9.51",
+      "description": "多基金指标对比，支持2-4只基金，移动端2列布局，包含大涨日/大跌日表格",
+      "check_points": [
+        "支持2-4只基金对比",
+        "对比指标完整：收益能力/抗跌风险/大涨日/大跌日",
+        "移动端2列布局，不超出页面",
+        "大涨日/大跌日表格无横向滚动",
+        "表格字体大小一致，符合样式规范",
+        "表格行高、居中对齐统一",
+        "对比截图包含所有Tab内容",
+        "可从自选列表更换对比基金",
+        "更换对比基金后开始对比按钮正常",
+        "对比数据与基金弹窗数据一致",
+        "对比页使用的基金数据与弹窗/卡片数据源一致",
+        "后端 /watch/compare 与 /fund/anti_detail 使用相同计算函数",
+        "v2.9.43: 对比页分数统一从数据库funds表读取，与卡片/弹窗完全一致",
+        "不再调用calc_scores实时计算"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-CMP-001",
+          "status": "resolved",
+          "description": "对比页面信息层级有问题",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.13",
+          "solution": "重构对比页面布局，优化信息层级",
+          "severity": "medium"
+        },
+        {
+          "id": "ISSUE-CMP-002",
+          "status": "resolved",
+          "description": "大涨日/大跌日表格横向滚动",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.13",
+          "solution": "优化表格列宽，减少列间距，禁止横向滚动",
+          "severity": "high"
+        },
+        {
+          "id": "ISSUE-CMP-003",
+          "status": "resolved",
+          "description": "表格字体大小不一致",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.13",
+          "solution": "统一表格字体为12px，行高统一，参照弹窗表格样式",
+          "severity": "medium"
+        },
+        {
+          "id": "ISSUE-CMP-004",
+          "status": "resolved",
+          "description": "对比截图只包含当前Tab",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.13",
+          "solution": "截图时自动展开所有Tab内容，合并为长图",
+          "severity": "medium"
+        },
+        {
+          "id": "ISSUE-CMP-005",
+          "status": "resolved",
+          "description": "更换对比基金后没有开始对比按钮",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.13",
+          "solution": "更换基金后自动显示开始对比按钮",
+          "severity": "medium"
+        }
+      ],
+      "code_files": [
+        "src/views/CompareView.vue",
+        "src/components/ComparePanel.vue"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#3.6-链路C-基金对比"
+      ],
+      "config_keys": [],
+      "last_verified": "2026-09-07 13:30:03",
+      "verify_result": "needs_recheck"
+    },
+    {
+      "id": "portfolio",
+      "name": "持仓管理",
+      "layer": "business",
+      "status": "healthy",
+      "version": "2.9.21",
+      "description": "交易记录管理、持仓汇总、收益计算、分笔独立核算、13%止盈提醒",
+      "check_points": [
+        "买入/卖出交易记录正常",
+        "持仓汇总计算正确（_recalculate_portfolio）",
+        "分笔独立核算，每笔成本和收益单独计算",
+        "持有超7天免手续费逻辑正确",
+        "13%止盈提醒正确触发",
+        "已卖出基金标记正确（灰色长方形+已卖出）",
+        "已卖出基金不在止盈弹窗显示",
+        "灵活做T降本逻辑正确",
+        "持仓收益数据实时更新",
+        "Excel导入后数据立即显示（invalidate_portfolio_cache清除缓存）",
+        "所有修改持仓操作后缓存自动清除（添加/更新/删除/批量止盈/Excel导入）",
+        "Excel导入支持多种表头格式（code/基金代码、name/基金名称、date/交易日期等）",
+        "Excel导入失败时返回详细错误信息（行号+原因）",
+        "非交易时段缓存TTL=300秒，交易时段TTL=30秒"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-PF-001",
+          "status": "resolved",
+          "description": "止盈提醒包含不符合止盈标准的投资",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.13",
+          "solution": "严格按13%止盈标准筛选，只显示达到止盈的投资",
+          "severity": "high"
+        },
+        {
+          "id": "ISSUE-PF-002",
+          "status": "resolved",
+          "description": "已卖出基金仍在止盈弹窗显示",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.13",
+          "solution": "已卖出基金从止盈弹窗排除",
+          "severity": "medium"
+        },
+        {
+          "id": "ISSUE-PF-003",
+          "status": "resolved",
+          "description": "止盈提醒中基金名称用代码替代",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.13",
+          "solution": "显示基金名称，不只用代码",
+          "severity": "low"
+        }
+      ],
+      "code_files": [
+        "backend/modules/portfolio/router.py",
+        "src/api/advanced.ts",
+        "src/components/PortfolioManager.vue",
+        "src/components/portfolio/PortfolioImportModal.vue",
+        "src/views/PortfolioView.vue",
+        "src/views/PortfolioDetailView.vue"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#3.5-持仓管理链路"
+      ],
+      "config_keys": [
+        "STOP_PROFIT_RATE",
+        "FREE_FEE_DAYS"
+      ],
+      "last_verified": "2026-09-06",
+      "verify_result": "verified",
+      "verify_note": "2026-09-06 修复Excel导入后缓存未清除问题，所有修改持仓操作现已统一调用invalidate_portfolio_cache()。验证：数据库140条记录，API返回20只持仓正常。"
+    },
+    {
+      "id": "profit_alert",
+      "name": "止盈提醒",
+      "layer": "business",
+      "status": "healthy",
+      "version": "2.9.21",
+      "description": "止盈规则管理、提醒中心、单个基金止盈设置、红色圆框淡红色UI",
+      "check_points": [
+        "达到13%止盈标准才显示",
+        "单个基金止盈设置在提醒中心显示",
+        "提醒中心添加提醒表单大小合适，符合风格",
+        "止盈弹窗UI：红色圆框+淡红色背景",
+        "已卖出基金不在止盈提醒显示",
+        "止盈提醒与持仓数据一致",
+        "P3止盈规则正确"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-PA-001",
+          "status": "resolved",
+          "description": "止盈提醒UI与正常持仓UI差不多",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.13",
+          "solution": "改为红色圆框+淡红色背景，区别于正常持仓",
+          "severity": "medium"
+        },
+        {
+          "id": "ISSUE-PA-002",
+          "status": "resolved",
+          "description": "添加提醒表单太大，与风格不符",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.13",
+          "solution": "优化表单大小和字体，符合整体风格",
+          "severity": "low"
+        }
+      ],
+      "code_files": [
+        "src/views/PortfolioAlertsView.vue",
+        "src/components/portfolio/ProfitTargetSetting.vue"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#3.5-链路C-止盈提醒"
+      ],
+      "config_keys": [
+        "STOP_PROFIT_RATE"
+      ],
+      "last_verified": "2026-09-06",
+      "verify_result": "pending"
+    },
+    {
+      "id": "algo_config",
+      "name": "算法配置",
+      "layer": "business",
+      "status": "healthy",
+      "version": "2.9.12",
+      "description": "榜单算法参数配置，阈值可调，设置面板展示算法说明",
+      "check_points": [
+        "所有榜单算法参数可配置",
+        "参数阈值合理",
+        "配置修改后榜单计算实时生效",
+        "设置面板算法说明与实际代码一致",
+        "计算周期说明正确：当日/三日/七日/近2周/综合",
+        "推荐榜单说明正确：抗跌/自选/质量/超跌筑底",
+        "4榜单独立算法描述正确",
+        "攻防榜算法描述正确（含技术形态过滤）",
+        "超跌筑底榜算法描述正确（含RPS弱势+均线粘合）"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-AC-001",
+          "status": "resolved",
+          "description": "设置面板算法描述都是旧版本",
+          "found_version": "v2.9.11",
+          "fixed_version": "v2.9.14",
+          "solution": "v2.9.14全面更新SettingsPanel.vue算法说明，对齐v2.9.12实际代码",
+          "severity": "high"
+        },
+        {
+          "id": "ISSUE-AC-002",
+          "status": "resolved",
+          "description": "计算周期说明还是旧的当日/两日/三日/七日",
+          "found_version": "v2.9.11",
+          "fixed_version": "v2.9.14",
+          "solution": "更新为当日/三日/七日/近2周/综合",
+          "severity": "medium"
+        },
+        {
+          "id": "ISSUE-AC-003",
+          "status": "resolved",
+          "description": "推荐榜单还是抗跌/自选/质量/ETF",
+          "found_version": "v2.9.11",
+          "fixed_version": "v2.9.14",
+          "solution": "更新为抗跌/自选/质量/超跌筑底",
+          "severity": "medium"
+        }
+      ],
+      "code_files": [
+        "backend/algo_config.py",
+        "src/components/SettingsPanel.vue"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#3.7-榜单展示链路"
+      ],
+      "config_keys": [
+        "cd_crash_k",
+        "cd_rps_threshold",
+        "atk_beta_threshold",
+        "rebound_20d_drop_threshold"
+      ],
+      "last_verified": "2026-09-06",
+      "verify_result": "pass"
+    },
+    {
+      "id": "rank_page",
+      "name": "榜单页",
+      "layer": "display",
+      "status": "healthy",
+      "version": "2.9.51",
+      "description": "日榜/推荐榜/攻防榜展示，Tab切换，基金卡片列表，下拉排序",
+      "check_points": [
+        "日榜5个子榜Tab切换正常",
+        "推荐榜4个子榜Tab切换正常",
+        "攻防榜4个子榜Tab切换正常",
+        "榜单数据与rank_snapshots表一致",
+        "基金卡片显示正确（名称/代码/涨幅/指标）",
+        "下拉排序弹出表单大小合适，字体符合规范",
+        "榜单排名降序正确",
+        "非交易日单日涨幅显示最近交易日数据，不为0",
+        "页面上下滑动正常，卡片不阻挡滑动",
+        "错误态显示重试按钮"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-RP-001",
+          "status": "resolved",
+          "description": "页面上下滑动有问题，卡片上方滑动时卡片有动作导致无法上滑",
+          "found_version": "v2.9.11",
+          "fixed_version": "v2.9.12",
+          "solution": "修复卡片touch事件，不阻挡页面滚动",
+          "severity": "high"
+        },
+        {
+          "id": "ISSUE-RP-002",
+          "status": "resolved",
+          "description": "非交易日单日涨幅显示0",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.14",
+          "solution": "增加数据新鲜度检查，非交易日显示最近交易日数据",
+          "severity": "high"
+        },
+        {
+          "id": "ISSUE-RP-003",
+          "status": "resolved",
+          "description": "下拉排序弹出表单太大，与风格不符",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.13",
+          "solution": "优化弹出表单大小和字体",
+          "severity": "low"
+        },
+        {
+          "id": "ISSUE-RP-004",
+          "status": "resolved",
+          "description": "错误态没有重试按钮",
+          "found_version": "v2.9.11",
+          "fixed_version": "v2.9.12",
+          "solution": "增加NEmpty+重试按钮",
+          "severity": "low"
+        }
+      ],
+      "code_files": [
+        "src/views/FundView.vue",
+        "src/components/FundCard.vue"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#3.7-链路A-榜单面板与Tab切换"
+      ],
+      "config_keys": [
+        "full_market",
+        "collect_max",
+        "min_funds"
+      ],
+      "last_verified": "2026-09-07 13:30:03",
+      "verify_result": "needs_recheck"
+    },
+    {
+      "id": "watch_page",
+      "name": "自选页",
+      "layer": "display",
+      "status": "healthy",
+      "version": "2.9.21",
+      "description": "自选基金列表，右滑加入对比，开始对比按钮，基金卡片展示",
+      "check_points": [
+        "自选页布局结构正确：列表头（全部X只+排序）在最上面，分组标签栏在列表头下面，基金卡片在最下面",
+        "分组标签栏通过WatchList的group-manager slot传递，渲染正常",
+        "分组切换功能正常，选中分组后只显示该分组内的基金",
+        "默认排序下拉框字体大小为12px，与页面其他文字一致",
+        "排序功能正常（默认排序、综合分降序、今日涨幅降序、近2周涨幅降序）",
+        "基金卡片网格布局正常，两列布局，移动端单列",
+        "滑动删除功能正常，5秒内可撤销",
+        "右滑加入对比功能正常",
+        "对比浮动按钮显示正常，选择2只基金后可跳转对比页",
+        "基金详情弹窗正常打开和关闭",
+        "搜索功能正常，支持基金代码和名称搜索",
+        "添加基金功能正常，支持批量添加",
+        "清空自选功能正常，有确认弹窗",
+        "加载态和空态显示正常",
+        "加载失败时有明确错误提示和重试按钮"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-WP-001",
+          "status": "resolved",
+          "description": "自选基金卡片比榜单窄",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.13",
+          "solution": "统一FundCard组件，自选和榜单共用同一套样式",
+          "severity": "medium"
+        },
+        {
+          "id": "ISSUE-WP-002",
+          "status": "resolved",
+          "description": "复选框未显示，对比触发不明确",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.13",
+          "solution": "改为右滑加入对比，底部开始对比按钮",
+          "severity": "medium"
+        }
+      ],
+      "code_files": [
+        "src/views/WatchView.vue",
+        "src/components/FundCard.vue"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#3.6-链路B-自选基金管理"
+      ],
+      "config_keys": [
+        "watch_detail_cache_ttl"
+      ],
+      "last_verified": "2026-09-07 13:30:03",
+      "verify_result": "pass",
+      "verify_note": "2026-09-06重新验证：布局优化完成，分组标签栏移到列表头下面，排序字体调整为12px。"
+    },
+    {
+      "id": "compare_page",
+      "name": "对比页",
+      "layer": "display",
+      "status": "healthy",
+      "version": "2.9.21",
+      "description": "对比结果展示，收益能力/抗跌风险/大涨日/大跌日Tab，移动端2列布局",
+      "check_points": [
+        "对比页面跳转正常（不是弹窗）",
+        "信息层级清晰，顶栏+二级标题+内容",
+        "收益能力Tab数据正确",
+        "抗跌风险Tab数据正确",
+        "大涨日Tab表格无横向滚动",
+        "大跌日Tab表格无横向滚动",
+        "表格字体大小一致，行高统一，居中对齐",
+        "移动端2列布局，不超出页面",
+        "下方展开可看到自选基金，点击可换对比基金",
+        "换基金后开始对比按钮正常",
+        "对比截图包含所有Tab内容",
+        "对比页两只基金的 d1/score/reco/adScore 与各自弹窗显示一致",
+        "对比前预加载两只基金详情到缓存，弹窗打开立即可见"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-CP-001",
+          "status": "resolved",
+          "description": "对比页面是弹窗不是跳转页面",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.13",
+          "solution": "改为路由跳转到/compare页面",
+          "severity": "high"
+        },
+        {
+          "id": "ISSUE-CP-002",
+          "status": "resolved",
+          "description": "信息层级有问题，顶栏和Tab遮挡",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.13",
+          "solution": "优化信息层级，顶栏固定，Tab吸顶，内容与最近一级保持距离",
+          "severity": "medium"
+        },
+        {
+          "id": "ISSUE-CP-003",
+          "status": "resolved",
+          "description": "大涨日/大跌日表格横向滚动",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.13",
+          "solution": "优化列宽，减少列间距，禁止横向滚动",
+          "severity": "high"
+        },
+        {
+          "id": "ISSUE-CP-004",
+          "status": "resolved",
+          "description": "表格字体太小，与其他表格不一致",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.13",
+          "solution": "统一表格字体为12px，参照弹窗表格样式",
+          "severity": "medium"
+        },
+        {
+          "id": "ISSUE-CP-005",
+          "status": "resolved",
+          "description": "移动端1列太宽，改为2列后超出页面",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.13",
+          "solution": "优化2列布局，卡片宽度自适应",
+          "severity": "medium"
+        }
+      ],
+      "code_files": [
+        "src/views/CompareView.vue",
+        "src/components/ComparePanel.vue"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#3.6-链路C-基金对比"
+      ],
+      "config_keys": [],
+      "last_verified": "2026-09-07 13:30:03",
+      "verify_result": "pass"
+    },
+    {
+      "id": "portfolio_page",
+      "name": "持仓页",
+      "layer": "display",
+      "status": "healthy",
+      "version": "2.9.30",
+      "description": "持仓明细展示，收益汇总固定，止盈弹窗，已卖出标记",
+      "check_points": [
+        "持仓收益部分固定，不随页面滑动",
+        "持仓明细列表正常显示",
+        "全部X只计数不固定（已移除固定）",
+        "止盈弹窗红色圆框+淡红色背景",
+        "已卖出基金显示灰色长方形+已卖出标记",
+        "已卖出基金不在止盈弹窗显示",
+        "分笔交易记录正常",
+        "页面滑动正常，顶栏不遮挡内容",
+        "Excel导入成功后页面自动刷新显示新持仓",
+        "导入后无缓存延迟（后端invalidate_portfolio_cache已清除）",
+        "持仓页底部工具行无提醒中心按钮（提醒中心通过顶栏入口访问）",
+        "盈利率计算口径正确：分母=总成本(total_cost)，与后端summary.profit_pct一致",
+        "止盈汇总盈利率计算口径正确：分母=实际成本(buy_nav*shares+fee)，与后端每笔记录profit_pct一致",
+        "前端显示的盈利率与后端API返回的profit_pct一致，差异<0.01%",
+        "清仓基金保留显示，不删除，status=sold，有已清仓标识",
+        "清仓基金显示灰色背景和已清仓标签，保留历史盈亏供参考",
+        "止盈提醒卡片正常显示设置了止盈目标的持有中记录",
+        "止盈记录的收益率计算正确，达标判断正确（pct >= profit_target）",
+        "止盈提醒卡片与提醒中心数据一致：investment_records.profit_target与alert_rules(type='profit')同步",
+        "设置止盈目标时自动创建/更新alert_rules表中的对应提醒规则",
+        "提醒中心显示的止盈规则与持仓页面止盈提醒卡片显示的基金一致",
+        "止盈提醒只显示已达标的记录（收益率 >= 止盈目标），未达标的记录不显示",
+        "止盈目标的设置和管理在持仓详情页进行，止盈提醒只负责提醒已达标"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-PP-001",
+          "status": "resolved",
+          "description": "持仓收益部分随页面滑动",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.13",
+          "solution": "持仓收益部分固定，不再滑动",
+          "severity": "medium"
+        },
+        {
+          "id": "ISSUE-PP-002",
+          "status": "resolved",
+          "description": "全部X只被固定了",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.13",
+          "solution": "移除全部X只的固定",
+          "severity": "low"
+        },
+        {
+          "id": "ISSUE-PP-003",
+          "status": "resolved",
+          "description": "止盈弹窗UI与正常持仓差不多",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.13",
+          "solution": "改为红色圆框+淡红色背景",
+          "severity": "medium"
+        },
+        {
+          "id": "ISSUE-PP-004",
+          "status": "resolved",
+          "description": "持仓页面盈利率计算口径不一致，前端用总市值作为分母，后端用总成本作为分母，差异5.68%",
+          "found_version": "v2.9.26",
+          "fixed_version": "v2.9.27",
+          "solution": "前端totalProfitPct分母从totalAmount改为totalCost；profitSummary.pct分母从amount改为实际成本(buy_nav*shares+fee)",
+          "severity": "high"
+        },
+        {
+          "id": "ISSUE-PP-005",
+          "status": "resolved",
+          "description": "基金清仓后直接从portfolio表删除，前端看不到清仓基金和历史记录",
+          "found_version": "v2.9.27",
+          "fixed_version": "v2.9.28",
+          "solution": "_recalculate_portfolio函数中清仓时不删除记录，改为INSERT OR REPLACE并标记status=sold，保留历史盈亏。前端PortfolioCard添加已清仓标识和灰色样式。",
+          "severity": "high"
+        },
+        {
+          "id": "ISSUE-PP-006",
+          "status": "resolved",
+          "description": "止盈提醒不显示，数据库中没有止盈目标记录（profit_target全部为NULL）",
+          "found_version": "v2.9.27",
+          "fixed_version": "v2.9.28",
+          "solution": "为测试基金添加13%止盈目标，验证止盈提醒正常显示。用户需要手动设置止盈目标或在Excel导入时包含该字段。",
+          "severity": "medium"
+        },
+        {
+          "id": "ISSUE-PP-007",
+          "status": "resolved",
+          "description": "止盈提醒卡片与提醒中心数据不一致：止盈提醒卡片从investment_records表读取，提醒中心从alert_rules表读取，直接更新数据库时只更新了investment_records表，导致提醒中心为空",
+          "found_version": "v2.9.28",
+          "fixed_version": "v2.9.29",
+          "solution": "为设置了止盈目标的基金在alert_rules表中创建对应的type='profit'提醒规则；在神经网络中添加数据一致性检查点；正常通过UI设置止盈目标时会自动调用upsertProfitRule()同步创建alert_rules",
+          "severity": "medium"
+        },
+        {
+          "id": "ISSUE-PP-008",
+          "status": "resolved",
+          "description": "止盈提醒显示逻辑不符合预期：显示所有设置了止盈目标的记录，包括负收益和未达标的记录，不符合'止盈提醒'的逻辑",
+          "found_version": "v2.9.29",
+          "fixed_version": "v2.9.30",
+          "solution": "止盈提醒只显示已达标的记录（收益率 >= 止盈目标），未达标的记录在持仓详情页管理止盈目标",
+          "severity": "medium"
+        }
+      ],
+      "code_files": [
+        "backend/modules/portfolio/router.py",
+        "src/components/PortfolioManager.vue",
+        "src/views/PortfolioView.vue",
+        "src/views/PortfolioDetailView.vue"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#3.5-持仓管理链路"
+      ],
+      "config_keys": [
+        "holdings_cache_ttl"
+      ],
+      "last_verified": "2026-09-07 13:30:03",
+      "verify_result": "pass"
+    },
+    {
+      "id": "market_page",
+      "name": "市场页",
+      "layer": "display",
+      "status": "healthy",
+      "version": "2.9.21",
+      "description": "市场热点、板块数据、大盘指数展示",
+      "check_points": [
+        "市场热点数据正常显示",
+        "板块数据正常",
+        "大盘指数正常",
+        "页面滑动正常",
+        "Tab随页面滑动处理正常（不难受）",
+        "顶栏上滑时有下阴影，分级清晰"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-MP-001",
+          "status": "resolved",
+          "description": "Tab随页面滑动很难受",
+          "found_version": "v2.9.11",
+          "fixed_version": "v2.9.12",
+          "solution": "Tab改为吸顶固定，不随页面滑动",
+          "severity": "medium"
+        },
+        {
+          "id": "ISSUE-MP-002",
+          "status": "resolved",
+          "description": "顶栏和Tab有些遮住了，分级不好",
+          "found_version": "v2.9.11",
+          "fixed_version": "v2.9.12",
+          "solution": "优化顶栏和Tab的层级和阴影，分级清晰",
+          "severity": "medium"
+        }
+      ],
+      "code_files": [
+        "src/views/MarketView.vue"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#3.4-市场页面链路"
+      ],
+      "config_keys": [
+        "market_cache_ttl",
+        "full_market"
+      ],
+      "last_verified": "2026-09-06",
+      "verify_result": "pass"
+    },
+    {
+      "id": "mine_page",
+      "name": "我的页",
+      "layer": "display",
+      "status": "healthy",
+      "version": "2.9.21",
+      "description": "运行更新/数据管理/外观设置/算法设置/系统监控/日志管理/版本信息",
+      "check_points": [
+        "实时进度UI优化，日志框嵌入实时进度下方",
+        "一键更新/停止按钮位置合理",
+        "实时进度日志显示正常",
+        "系统监控和日志管理在版本信息前",
+        "算法设置面板正常",
+        "版本号显示正确（v2.9.14）",
+        "页面滑动正常",
+        "死滚动问题已修复（min-height:100%）"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-MINE-001",
+          "status": "resolved",
+          "description": "MonitorView死滚动（min-height:100vh）",
+          "found_version": "v2.9.11",
+          "fixed_version": "v2.9.12",
+          "solution": "min-height:100vh改为100%",
+          "severity": "high"
+        },
+        {
+          "id": "ISSUE-MINE-002",
+          "status": "resolved",
+          "description": "三重标题（backbar中间标题+页内h2）",
+          "found_version": "v2.9.11",
+          "fixed_version": "v2.9.12",
+          "solution": "backbar去掉中间标题，页内h2保留为唯一标题",
+          "severity": "medium"
+        },
+        {
+          "id": "ISSUE-MINE-003",
+          "status": "resolved",
+          "description": "监控页深浅割裂（浅色主题下深色卡片）",
+          "found_version": "v2.9.11",
+          "fixed_version": "v2.9.12",
+          "solution": "--monitor-bg补浅色覆盖#F1F5F9",
+          "severity": "medium"
+        },
+        {
+          "id": "ISSUE-MINE-004",
+          "status": "resolved",
+          "description": "实时进度UI需要优化",
+          "found_version": "v2.9.13",
+          "fixed_version": "v2.9.14",
+          "solution": "重构实时进度，日志框嵌入下方，移除进度数字和进度条",
+          "severity": "low"
+        }
+      ],
+      "code_files": [
+        "src/views/MineView.vue",
+        "src/views/MonitorView.vue",
+        "src/views/LogView.vue"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#3.9-我的页面链路"
+      ],
+      "config_keys": [],
+      "last_verified": "2026-09-06",
+      "verify_result": "pending"
+    },
+    {
+      "id": "fund_card",
+      "name": "基金卡片",
+      "layer": "display",
+      "status": "healthy",
+      "version": "2.9.51",
+      "description": "通用基金卡片组件，榜单页和自选页共用，显示名称/代码/涨幅/指标",
+      "check_points": [
+        "榜单页和自选页共用同一套FundCard组件",
+        "卡片宽度一致，自选和榜单无差异",
+        "基金名称、代码显示正确",
+        "单日涨幅显示正确（非交易日不为0）",
+        "指标数据显示正确",
+        "点击卡片弹出基金详情弹窗",
+        "右滑手势正常（自选页）",
+        "卡片样式符合设计规范",
+        "点击卡片时预加载基金详情（preloadDetail），与弹窗共享缓存",
+        "卡片显示的 d1/score/reco/adScore 与弹窗一致"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-FC-001",
+          "status": "resolved",
+          "description": "自选和榜单基金卡片大小不一样",
+          "found_version": "v2.9.11",
+          "fixed_version": "v2.9.13",
+          "solution": "统一FundCard组件，自选和榜单共用同一套样式",
+          "severity": "high"
+        },
+        {
+          "id": "ISSUE-FC-002",
+          "status": "resolved",
+          "description": "非交易日单日涨幅显示0",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.14",
+          "solution": "增加数据新鲜度检查，显示最近交易日数据",
+          "severity": "high"
+        }
+      ],
+      "code_files": [
+        "src/components/FundCard.vue"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#3.7-链路A-榜单面板与Tab切换"
+      ],
+      "config_keys": [
+        "anti_cache_ttl",
+        "anti_cache_max"
+      ],
+      "last_verified": "2026-09-07 13:30:03",
+      "verify_result": "needs_recheck"
+    },
+    {
+      "id": "fund_modal",
+      "name": "基金弹窗",
+      "layer": "display",
+      "status": "healthy",
+      "version": "2.9.51",
+      "description": "基金详情弹窗，显示完整指标、持仓、大涨日/大跌日表格",
+      "check_points": [
+        "弹窗显示正确，大小合适",
+        "基金基本信息正确",
+        "完整指标数据正确（m1/m3/m6/y1/回撤/夏普/卡玛/索提诺）",
+        "前十大持仓显示正确",
+        "大涨日表格样式规范（字体/行高/居中）",
+        "大跌日表格样式规范",
+        "数据与榜单/对比页面一致",
+        "非交易日数据显示正确",
+        "使用统一数据层 useFundDetail，不再直接调用 getAntiDetail",
+        "弹窗背景不透明（var(--bg-card, #ffffff)），无内容透出",
+        "弹窗显示的 d1/score/reco/adScore 与卡片一致",
+        "缓存命中时打开时间 < 100ms",
+        "v2.9.43: 弹窗分数统一从数据库funds表读取（ad_score/earn_score/score），与卡片完全一致",
+        "不再调用calc_scores实时计算，废弃旧算法"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-FM-001",
+          "status": "resolved",
+          "description": "弹窗指标数据受缓存影响不准确",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.14",
+          "solution": "统一数据源，增加数据新鲜度检查，v2.9.14历史数据补全",
+          "severity": "high"
+        }
+      ],
+      "code_files": [
+        "src/components/FundDetailModal.vue"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#3.6-链路A-基金详情弹窗"
+      ],
+      "config_keys": [
+        "watch_detail_cache_ttl",
+        "long_metrics_cache_ttl"
+      ],
+      "last_verified": "2026-09-07 13:30:03",
+      "verify_result": "needs_recheck"
+    },
+    {
+      "id": "settings",
+      "name": "设置面板",
+      "layer": "display",
+      "status": "healthy",
+      "version": "2.9.21",
+      "description": "算法设置面板，展示计算周期、4榜单独立算法、攻防榜、超跌筑底榜说明",
+      "check_points": [
+        "计算周期说明正确：当日/三日/七日/近2周/综合",
+        "推荐榜单说明正确：抗跌/自选/质量/超跌筑底",
+        "更新方式说明正确：手动触发一键更新",
+        "抗跌榜算法说明正确",
+        "自选榜算法说明正确",
+        "质量榜评分公式正确：下行夏普30%+卡玛25%+盈利稳定性15%-下跌捕获15%+上涨捕获15%",
+        "超跌筑底榜算法正确：急跌20+RPS10+低位25+筑底35+赛道10，均线粘合加分",
+        "攻防榜算法正确（含技术形态过滤）",
+        "高弹性榜：趋势强度>0过滤",
+        "反弹先锋榜：ETF突破20日高点+均线多头",
+        "算法说明与实际代码一致"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-ST-001",
+          "status": "resolved",
+          "description": "算法描述都是旧版本，与实际代码不一致",
+          "found_version": "v2.9.11",
+          "fixed_version": "v2.9.14",
+          "solution": "v2.9.14全面更新SettingsPanel.vue，对齐v2.9.12实际代码",
+          "severity": "high"
+        }
+      ],
+      "code_files": [
+        "src/components/SettingsPanel.vue"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#3.7-榜单展示链路"
+      ],
+      "config_keys": [
+        "app_version",
+        "full_market",
+        "use_hithink_as_primary"
+      ],
+      "last_verified": "2026-09-06",
+      "verify_result": "pending"
+    },
+    {
+      "id": "chain_doc",
+      "name": "功能链文档",
+      "layer": "system",
+      "status": "healthy",
+      "version": "2.9.23",
+      "description": "CHAIN_TEST_MANUAL.md，完整功能链描述，包含一键更新/榜单/自选/对比/持仓/数据源等链路",
+      "check_points": [
+        "一键更新链路描述与实际代码一致（6阶段）",
+        "数据源链路描述与实际代码一致（三数据源+多源并行）",
+        "榜单链路描述与实际代码一致（13个子榜算法）",
+        "自选链路描述与实际代码一致",
+        "对比链路描述与实际代码一致",
+        "持仓链路描述与实际代码一致",
+        "止盈提醒链路描述与实际代码一致",
+        "不是只在尾部插版本说明，主体描述已更新",
+        "后续修改和新增功能链都有完整功能描述"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-CD-001",
+          "status": "resolved",
+          "description": "只在尾部插版本说明，主体描述未更新",
+          "found_version": "v2.9.11",
+          "fixed_version": "v2.9.14",
+          "solution": "v2.9.14全面更新功能链主体描述，对齐实际代码",
+          "severity": "high"
+        },
+        {
+          "id": "ISSUE-CD-002",
+          "status": "resolved",
+          "description": "功能描述缺失导致目标错误，测试出问题",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.14",
+          "solution": "后续修改和新增功能链都要求完整功能描述",
+          "severity": "high"
+        }
+      ],
+      "code_files": [
+        "backend/docs/CHAIN_TEST_MANUAL.md"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md"
+      ],
+      "config_keys": [],
+      "last_verified": "2026-09-06",
+      "verify_result": "pass"
+    },
+    {
+      "id": "system_monitor",
+      "name": "系统监控",
+      "layer": "system",
+      "status": "healthy",
+      "version": "2.9.21",
+      "description": "数据源状态、运行状态、系统健康度监控",
+      "check_points": [
+        "数据源状态显示正常（三数据源）",
+        "运行状态显示正常",
+        "系统健康度正常",
+        "浅色主题下stat卡为浅底深字",
+        "页面只有1个标题（不是三重标题）",
+        "死滚动问题已修复"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-SM-001",
+          "status": "resolved",
+          "description": "监控页深浅割裂",
+          "found_version": "v2.9.11",
+          "fixed_version": "v2.9.12",
+          "solution": "--monitor-bg补浅色覆盖",
+          "severity": "medium"
+        },
+        {
+          "id": "ISSUE-SM-002",
+          "status": "resolved",
+          "description": "三重标题",
+          "found_version": "v2.9.11",
+          "fixed_version": "v2.9.12",
+          "solution": "backbar去掉中间标题",
+          "severity": "low"
+        }
+      ],
+      "code_files": [
+        "src/views/MonitorView.vue"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#3.9-链路B-系统监控"
+      ],
+      "config_keys": [
+        "min_db_mb",
+        "max_errors"
+      ],
+      "last_verified": "2026-09-06",
+      "verify_result": "pending"
+    },
+    {
+      "id": "log_manager",
+      "name": "日志管理",
+      "layer": "system",
+      "status": "healthy",
+      "version": "2.9.21",
+      "description": "更新日志、错误日志、实时进程日志查看",
+      "check_points": [
+        "更新日志显示正常",
+        "错误日志显示正常",
+        "实时进程日志显示正常",
+        "页面只有1个标题",
+        "死滚动问题已修复"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-LM-001",
+          "status": "resolved",
+          "description": "LogView死滚动",
+          "found_version": "v2.9.11",
+          "fixed_version": "v2.9.12",
+          "solution": "min-height:100vh改为100%",
+          "severity": "medium"
+        }
+      ],
+      "code_files": [
+        "src/views/LogView.vue"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#3.9-链路C-日志管理"
+      ],
+      "config_keys": [],
+      "last_verified": "2026-09-06",
+      "verify_result": "pending"
+    },
+    {
+      "id": "version_mgmt",
+      "name": "版本管理",
+      "layer": "system",
+      "status": "healthy",
+      "version": "2.9.21",
+      "description": "版本号管理、缓存失效、更新检测、构建部署完整流程规范",
+      "check_points": [
+        "后端版本号（backend/config.py）与前端版本号（src/utils/version.ts）一致",
+        "每次功能变更/优化/新增/重构必须主动升级版本号（patch+1），不需要用户提醒",
+        "版本号升级后页面显示正确（我的页-版本信息）",
+        "缓存失效机制正常（?v=参数，数据版本戳bump_data_version）",
+        "构建前清理：删除旧的backend/static/assets",
+        "构建命令：npm run build（约12s，输出到dist/）",
+        "构建产物复制：Copy-Item dist/* backend/static -Recurse -Force",
+        "打包命令：python _pack.py（输出到F:\\最新的包\\，文件名格式invest-v281-deploy-v{版本}-{日期}.zip）",
+        "构建验证：导入验证（python -c \"from modules.common.fetch_manager import PHASES\"）、功能验证",
+        "部署包验证：①构建前必须删除旧的backend/static/assets，不能追加；②重复文件检查：同一个组件不应该有多个不同hash版本（如CompareView-*.js出现2个以上就是异常）；③构建产物完整性：index.html引用的所有JS/CSS文件都存在；④版本号一致：包名版本号、config.py版本号、页面显示版本号三者一致",
+        "变更完成后必须主动记录到change_history.json（CHG-{日期}-{序号}）",
+        "修改含中文文件必须用Python脚本指定encoding=utf-8，禁止PowerShell Set-Content"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-VM-001",
+          "status": "resolved",
+          "description": "做了更新但版本号不升级",
+          "found_version": "v2.9.13",
+          "fixed_version": "v2.9.14",
+          "solution": "建立版本号升级检查清单，每次更新必须同步升级后端config.py和前端version.ts",
+          "severity": "high"
+        },
+        {
+          "id": "ISSUE-VM-002",
+          "status": "resolved",
+          "description": "缓存污染导致看到旧版本",
+          "found_version": "v2.9.12",
+          "fixed_version": "v2.9.14",
+          "solution": "增加?v=版本号参数，强制刷新缓存",
+          "severity": "high"
+        }
+      ],
+      "code_files": [
+        "backend/config.py",
+        "src/utils/version.ts",
+        "_pack.py"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#3.9-链路D-版本信息"
+      ],
+      "config_keys": [
+        "VERSION"
+      ],
+      "last_verified": "2026-09-06",
+      "verify_result": "verified",
+      "verify_note": "v2.9.24一致性检查：补充完整构建部署流程规范（12条check_points），明确版本号升级、构建、打包、验证全流程"
+    },
+    {
+      "id": "change_gateway",
+      "name": "变更准入网关",
+      "layer": "system",
+      "status": "healthy",
+      "version": "2.9.37",
+      "description": "所有功能更新/新增的强制前置入口：需求登记→重复检查→影响分析→七类必做项任务清单→创建变更记录→执行跟踪→完成验证门（强制校验100%完成）→自动同步神经网络",
+      "check_points": [
+        "变更标题、类型、优先级、涉及节点填写完整",
+        "重复检查：搜索已有变更历史和节点开放病点",
+        "影响分析：遍历所有涉及节点的下游影响",
+        "七类必做项齐全：代码/数据/文档/测试/神经网络/版本号/构建",
+        "变更记录创建成功，状态为pending",
+        "确认开始后状态变为in_progress",
+        "完成验证门：七类任务项100%完成，缺一不可",
+        "完成后自动同步神经网络：更新涉及节点version和last_verified",
+        "编码安全：修改含中文文件（.vue/.py/.md等）必须用Python脚本指定encoding=utf-8，禁止用PowerShell Set-Content（会破坏UTF-8编码导致语法损坏）",
+        "进行中变更列表可见，防止遗漏",
+        "变更类型为refactor/代码拆分时，禁止批量正则删除函数，必须逐函数操作",
+        "拆分/移动代码前必须先备份原文件（复制到临时目录）",
+        "拆分后必须立即验证：语法编译通过 + 所有API端点存在 + 函数调用链完整",
+        "大量代码移动采用渐进式：先创建新文件并验证→再删除旧代码，禁止一次性删除",
+        "正则匹配删除代码时，匹配范围必须精确到单个函数，禁止用(?=\\n# ---|\\ndef)这类宽泛边界",
+        "UI变更必须运行ui:check:change检测",
+        "UI检测结果记录到变更历史",
+        "P0问题必须修复或记录豁免",
+        "遵循docs/ui-change-gateway-checklist.md检查清单",
+        "阶段1-Brainstorming：苏格拉底式7问全部回答，替代方案对比完成",
+        "阶段2-WritingPlans：任务分解到2-5分钟粒度，文件路径精确，YAGNI/DRY检查通过",
+        "阶段3-GitWorktrees：隔离工作区创建，干净基线验证通过（构建+测试）",
+        "阶段4-SubagentDev：子任务逐任务实现并验证，UI变更运行ui:check:change",
+        "阶段5-CodeReview：两阶段审查通过（规范合规性+代码质量），Blocker=0",
+        "阶段6-Verification：强制验证清单100%通过，反证搜索已执行，七类必做项完成",
+        "阶段7-FinishingBranch：最终测试通过，合并决策做出，清理完成，神经网络同步",
+        "AI自动调用规范：变更开始时必须自动调用 `node scripts/change-workflow.mjs start --title <标题>` 记录流程",
+        "AI自动调用规范：涉及UI变更时必须自动调用 `node scripts/ui-design-guide.mjs` 输出设计命令指导",
+        "AI自动调用规范：变更完成后必须自动调用 `node scripts/change-ui-check.mjs` 检测变更文件",
+        "AI自动调用规范：构建完成后 postbuild 钩子自动运行 postbuild-verification.mjs 验证",
+        "AI自动调用规范：每个阶段完成后必须自动调用 `node scripts/change-workflow.mjs update --stage <阶段>` 更新状态",
+        "AI自动调用规范：变更完成后必须自动调用 `node scripts/change-workflow.mjs finish` 完成流程",
+        "用户提出变更需求时，必须自动识别并启动变更流程（参考change-trigger-detect.mjs）",
+        "变更开始时必须自动调用change-workflow.mjs start 1",
+        "涉及UI变更时必须自动调用ui-design-guide.mjs输出设计命令",
+        "每个阶段完成后必须自动调用change-workflow.mjs complete更新状态",
+        "变更完成后必须自动调用change-workflow.mjs complete 7完成流程",
+        "工具调用失败时必须记录错误并向用户说明，不静默失败",
+        "UI变更开始时，必须自动判断是简单变更还是复杂变更",
+        "简单UI变更（1-3个文件）：每改完一个UI文件必须自动调用change-ui-check.mjs检测",
+        "复杂UI变更（4个以上文件或重构）：必须自动在后台启动ui-live-watch.mjs",
+        "复杂UI变更完成后，必须自动停止后台监听进程",
+        "检测到P0问题必须当场修复，P1/P2问题必须告知用户",
+        "所有检测结果必须反馈给用户，用户不需要手动运行任何检测脚本"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-CG-001",
+          "status": "resolved",
+          "description": "PowerShell Set-Content破坏UTF-8编码导致FunctionGraphView.vue语法损坏",
+          "found_version": "v2.9.22",
+          "fixed_version": "v2.9.22",
+          "solution": "新增编码安全检查项，强制要求用Python脚本修改含中文文件",
+          "severity": "high"
+        },
+        {
+          "id": "ISSUE-20260906-001",
+          "status": "resolved",
+          "description": "P2-1网关代码拆分时正则匹配范围过大，误删router.py近1000行（含所有change API端点），从v2.9.22部署包恢复后重新应用修改",
+          "found_version": "",
+          "root_cause": "用(?=\\n# ---|\\ndef [a-zA-Z])宽泛正则匹配函数边界，匹配到下一个顶层def时跨越了多个函数和API端点",
+          "severity": "high"
+        },
+        {
+          "id": "ISSUE-CG-AI-AUTO-001",
+          "status": "mitigated",
+          "description": "AI在变更时缺乏自动调用工具的习惯，常让用户手动去命令行跑脚本。通过在change_gateway检查点中明确AI自动调用规范，并创建ai-change-automation-spec.md文档，强化AI自动调用行为。",
+          "found_version": "v2.9.34",
+          "severity": "medium",
+          "mitigation": "新增6条AI自动调用规范检查点 + ai-change-automation-spec.md文档 + ai-automation-checklist.md检查清单"
+        },
+        {
+          "id": "ISSUE-CG-AUTO-TRIGGER-001",
+          "status": "mitigated",
+          "description": "自动触发机制需要AI严格遵守规范，可能需要多次强化。通过change-trigger-detect.mjs脚本辅助识别 + auto_trigger字段明确规则 + auto-trigger-checklist.md检查清单三重保障。",
+          "found_version": "v2.9.35",
+          "severity": "medium",
+          "mitigation": "新增change-trigger-detect.mjs识别脚本 + change_gateway.auto_trigger字段 + auto-trigger-checklist.md + ai-change-automation-spec.md变更触发识别章节"
+        },
+        {
+          "id": "ISSUE-CG-LIVE-AUTO-001",
+          "status": "mitigated",
+          "description": "用户不会手动运行检测脚本，必须由AI自动调用，需要持续强化",
+          "found_version": "v2.9.36",
+          "severity": "medium",
+          "mitigation": "新增ui-live-auto.mjs辅助脚本（judge/start/stop/status/summary）+ ai-change-automation-spec.md第七章Live检测自动触发机制 + function_graph.json change_gateway节点6条新检查点 + auto-trigger-checklist.md第七部分7项检查"
+        }
+      ],
+      "code_files": [
+        "backend/modules/system/router.py",
+        "src/views/FunctionGraphView.vue"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#变更准入网关"
+      ],
+      "config_keys": [],
+      "last_verified": "2026-09-06T21:29:24.413202",
+      "verify_result": "verified",
+      "superpowers_concepts": [
+        "brainstorming:苏格拉底式提问、探索替代方案、分段验证",
+        "writing-plans:2-5分钟任务分解、精确文件路径、完整代码、验证步骤",
+        "subagent-driven-development:子任务分派、两阶段审查",
+        "verification-before-completion:强制验证清单、证据胜过声明",
+        "requesting-code-review:对照计划审查、按严重程度报告",
+        "finishing-a-development-branch:测试验证、合并决策、清理"
+      ],
+      "trigger_conditions": [
+        "新变更登记时自动触发brainstorming需求分析",
+        "变更进入in_progress前触发writing-plans任务分解",
+        "变更涉及≥3个节点或代码量>500行时触发subagent-driven-development子任务分派",
+        "变更标记完成前强制触发verification-before-completion验证清单",
+        "代码变更量>100行或涉及核心业务节点时触发requesting-code-review",
+        "变更状态从in_progress→completed时触发finishing-a-development-branch"
+      ],
+      "auto_trigger": {
+        "enabled": true,
+        "trigger_keywords": {
+          "modify": [
+            "改",
+            "修改",
+            "调整",
+            "把...改成"
+          ],
+          "refactor": [
+            "重构",
+            "重写",
+            "拆分",
+            "合并"
+          ],
+          "optimize": [
+            "优化",
+            "改进",
+            "提升"
+          ],
+          "add": [
+            "新增",
+            "添加",
+            "增加",
+            "支持"
+          ],
+          "delete": [
+            "删除",
+            "移除",
+            "去掉"
+          ],
+          "fix": [
+            "修复",
+            "修一下",
+            "bug",
+            "有问题",
+            "报错"
+          ],
+          "style": [
+            "颜色",
+            "字号",
+            "布局",
+            "样式"
+          ]
+        },
+        "trigger_actions": [
+          "自动调用change-workflow.mjs start 1启动流程",
+          "自动分析影响范围（遍历神经网络下游边）",
+          "涉及UI变更时自动调用ui-design-guide.mjs",
+          "自动进入Brainstorming阶段确认需求",
+          "每阶段完成后自动调用change-workflow.mjs complete",
+          "变更完成后自动调用change-workflow.mjs complete 7"
+        ],
+        "auto_tools": [
+          "change-workflow.mjs",
+          "ui-design-guide.mjs",
+          "change-ui-check.mjs",
+          "change-trigger-detect.mjs"
+        ],
+        "exception_handling": {
+          "tool_failure": "记录错误不阻断，向用户说明",
+          "requirement_change": "自动reset后重新start",
+          "user_cancel": "自动reset终止流程",
+          "large_change": "超过5个文件时提醒用户确认"
+        },
+        "live_detection": {
+          "simple_change_trigger": "简单UI变更（1-3个文件，不涉及组件结构重构）：AI改完每个UI文件后自动调用change-ui-check.mjs <文件路径>检测，检测结果直接在对话中反馈，P0问题必须当场修复",
+          "complex_change_trigger": "复杂UI变更（4个以上文件或涉及组件结构重构/页面布局重构）：AI在开始变更前自动通过ui-live-auto.mjs start在后台启动ui-live-watch.mjs，后台进程持续监听文件变化自动检测，AI定期汇总反馈，变更完成后自动通过ui-live-auto.mjs stop停止后台监听",
+          "auto_tools": [
+            "change-ui-check.mjs",
+            "ui-live-auto.mjs",
+            "ui-live-watch.mjs"
+          ],
+          "feedback_rules": "简单变更：检测结果直接在对话中反馈；复杂变更：每完成一个阶段或每修改3-5个文件汇总一次检测结果反馈；P0问题必须当场修复，P1/P2问题告知用户并建议修复；所有检测结果必须反馈给用户，用户不需要手动运行任何检测脚本"
+        }
+      }
+    },
+    {
+      "id": "ui_design",
+      "name": "UI设计规范",
+      "layer": "display",
+      "status": "healthy",
+      "version": "2.9.47",
+      "description": "统一设计系统 v2：设计令牌（颜色/排版/间距/圆角/阴影/动效/组件级）、组件规范、响应式布局、信息层级、无障碍规范，所有展示层页面必须遵循；v2令牌与旧令牌并存，逐步迁移",
+      "check_points": [
+        "设计令牌统一：颜色(--up/--down/--primary等)、字体(--font-xs到--font-3xl)、间距(--space-1到--space-8)、圆角、阴影",
+        "基金卡片组件统一：自选页和榜单页使用同一套FundCard组件，宽度、内边距、字体完全一致",
+        "表格规范：表头/表体字号一致(12-13px)、行高一致、列宽自适应、禁止横向滚动",
+        "弹窗规范：统一宽度(移动端90%/桌面480px)、标题字号16px、内容字号14px、按钮样式统一",
+        "信息层级：顶栏(48px)→一级标题(18px)→二级标题(16px)→内容(14px)，无一级标题时二级升级为一级",
+        "响应式：移动端优先，触控目标≥44px，断点640/768/1024",
+        "涨跌颜色：涨红(--up #DC2626)、跌绿(--down #16A34A)，全系统统一",
+        "数字字体：font-feature-settings: tnum，等宽数字对齐",
+        "卡片间距：页面padding 16px，卡片间距8px，卡片内padding 8-12px",
+        "禁止硬编码颜色/字号：必须使用CSS变量，禁止在组件中写死px值",
+        "v2设计令牌系统：--color-*（中性/品牌/语义/行情色）、--font-size-*（9级）、--space-*（0-16级完整）、--radius-*（8级）、--shadow-*（6级）",
+        "动效系统：--duration-*（5级100-500ms）、--ease-*（4级缓动曲线）、--transition-*（3级预设），使用transform/opacity避免重排",
+        "组件级令牌：--btn-*（按钮高度/圆角/内边距）、--input-*、--card-*、--chip-*、--table-*，组件样式必须引用组件级令牌",
+        "无障碍规范：正文对比度≥4.5:1、大字≥3:1、焦点环--focus-ring、触控目标≥44px、支持键盘导航",
+        "深浅主题一致：所有v2令牌必须同时定义浅色和深色两套值，组件在两种主题下视觉一致"
+      ],
+      "known_issues": [
+        {
+          "id": "ISSUE-UI-001",
+          "status": "resolved",
+          "description": "自选页与榜单页基金卡片宽度不一致",
+          "found_version": "v2.9.18",
+          "fixed_version": "v2.9.20",
+          "solution": "统一使用FundCard组件，移除页面级特殊样式",
+          "severity": "medium"
+        },
+        {
+          "id": "ISSUE-UI-002",
+          "status": "resolved",
+          "description": "对比页大涨日/大跌日表格字体过小且横向滚动",
+          "found_version": "v2.9.19",
+          "fixed_version": "v2.9.20",
+          "solution": "统一表格字号12px，列宽压缩，禁止横向滚动",
+          "severity": "medium"
+        },
+        {
+          "id": "ISSUE-UI-003",
+          "status": "resolved",
+          "description": "止盈提醒弹窗样式与持仓UI混淆",
+          "found_version": "v2.9.20",
+          "fixed_version": "v2.9.22",
+          "solution": "止盈提醒使用红色圆框+淡红色背景，与普通持仓卡片区分",
+          "severity": "low"
+        }
+      ],
+      "code_files": [
+        "src/styles/index.scss (核心：v1+v2设计令牌系统)",
+        "src/components/FundCard.vue (基金卡片组件)",
+        "src/components/AppHeader.vue (顶部导航栏)",
+        "src/views/PortfolioDetailView.vue (持仓详情+底部操作栏)"
+      ],
+      "doc_sections": [
+        "CHAIN_TEST_MANUAL.md#UI设计规范"
+      ],
+      "config_keys": [
+        "--bp-mobile",
+        "--bp-tablet",
+        "--bp-desktop"
+      ],
+      "last_verified": "2026-09-07",
+      "verify_result": "pass",
+      "v2_tokens": {
+        "color": {
+          "neutral": [
+            "--color-bg-* (5级)",
+            "--color-border-* (3级)",
+            "--color-text-* (5级)"
+          ],
+          "brand": [
+            "--color-primary-50/100/500/600/700"
+          ],
+          "semantic": [
+            "--color-success-*",
+            "--color-warning-*",
+            "--color-danger-*",
+            "--color-info-*"
+          ],
+          "market": [
+            "--color-up-*",
+            "--color-down-* (与语义色解耦)"
+          ]
+        },
+        "typography": {
+          "font_size": [
+            "--font-size-display/h1/h2/h3/body-lg/body/body-sm/caption/xs (9级)"
+          ],
+          "line_height": [
+            "--leading-tight/normal/relaxed/loose"
+          ],
+          "font_weight": [
+            "--weight-regular/medium/semibold/bold"
+          ]
+        },
+        "spacing": [
+          "--space-0 到 --space-16 (4px基座，完整17级)"
+        ],
+        "radius": [
+          "--radius-none/xs/sm/md/lg/xl/2xl/full (8级)"
+        ],
+        "shadow": [
+          "--shadow-xs/sm/md/lg/xl/glow (6级)"
+        ],
+        "motion": {
+          "duration": [
+            "--duration-instant/fast/base/slow/slower (100-500ms)"
+          ],
+          "easing": [
+            "--ease-standard/emphasized/enter/exit"
+          ],
+          "preset": [
+            "--transition-fast/base/slow"
+          ]
+        },
+        "component": {
+          "button": [
+            "--btn-height-sm/md/lg",
+            "--btn-radius",
+            "--btn-gap",
+            "--btn-padding-x"
+          ],
+          "input": [
+            "--input-height",
+            "--input-radius",
+            "--input-padding-x",
+            "--input-bg"
+          ],
+          "card": [
+            "--card-radius",
+            "--card-padding",
+            "--card-gap",
+            "--card-bg"
+          ],
+          "chip": [
+            "--chip-height",
+            "--chip-radius",
+            "--chip-padding-x",
+            "--chip-font-size"
+          ],
+          "table": [
+            "--table-header-height",
+            "--table-row-height",
+            "--table-cell-padding-x",
+            "--table-font-size"
+          ]
+        },
+        "a11y": [
+          "--focus-ring",
+          "--touch-target-min"
+        ]
+      },
+      "migration_status": {
+        "v2_tokens_added": true,
+        "v2_tokens_date": "2026-09-07",
+        "components_migrated": [
+          "AppHeader",
+          "AppTabBar",
+          "SettingsPanel",
+          "GroupManager",
+          "PortfolioCard",
+          "PortfolioManager",
+          "PortfolioDetailView",
+          "PortfolioSummary",
+          "ProfitTargetSetting",
+          "InvestmentRecordList",
+          "BuyRecordModal",
+          "SellRecordModal",
+          "PortfolioAddModal",
+          "PortfolioImportModal",
+          "QuickDateField",
+          "WatchView",
+          "WatchList",
+          "FundView",
+          "CompareView",
+          "MarketView",
+          "MarketOverview",
+          "MarketIndustries",
+          "MarketNews",
+          "IndexResearch",
+          "MonitorView",
+          "LogView",
+          "FunctionGraphView",
+          "PortfolioAlertsView",
+          "AlertManager",
+          "AlertForm",
+          "AlertList",
+          "SyncManager",
+          "SyncStatus",
+          "AppTabs",
+          "EmptyState",
+          "LoadingState",
+          "ProgressBar",
+          "TagBadge",
+          "KlineChart",
+          "RecoChart",
+          "ScoreChart",
+          "FundBasicInfo",
+          "FundScoreDetail",
+          "AlgoConfigPanel",
+          "AppearanceSettings",
+          "DangerZone",
+          "SystemStatus",
+          "PageSkeleton",
+          "MarketOverviewSkeleton",
+          "InvestmentRecordSkeleton"
+        ],
+        "components_migrated_count": 50,
+        "components_pending": [
+          "FundCard (用户指定暂不迁移)",
+          "FundModal/对比弹窗 (用户指定暂不迁移)",
+          "BaseForm (无需迁移)",
+          "SwipeAction (无需迁移)",
+          "ToastHost (无需迁移)"
+        ],
+        "migration_strategy": "渐进式：新组件用v2令牌，旧组件逐步迁移，不一次性重写",
+        "last_migration_date": "2026-09-07",
+        "migration_complete": true,
+        "excluded_by_user": [
+          "FundCard",
+          "FundModal/对比弹窗"
+        ]
+      },
+      "last_updated": "2026-09-07",
+      "uiux_pro_max": {
+        "installed": true,
+        "install_date": "2026-09-07",
+        "design_style": "Data-Dense Dashboard",
+        "color_palette": "Fintech Blue + Amber",
+        "primary_color": "#1E40AF",
+        "secondary_color": "#3B82F6",
+        "accent_color": "#F59E0B",
+        "background": "#F8FAFC",
+        "typography": {
+          "heading": "Fira Code",
+          "body": "Fira Sans",
+          "monospace_numbers": true
+        },
+        "key_effects": [
+          "hover tooltips",
+          "chart zoom on click",
+          "row highlighting on hover",
+          "smooth filter animations",
+          "data loading spinners"
+        ],
+        "anti_patterns": [
+          "ornate design",
+          "no filtering"
+        ],
+        "accessibility": "WCAG AA"
+      },
+      "checkpoints": [
+        "UI UX Pro Max skill 已安装",
+        "Data-Dense Dashboard 风格已应用",
+        "金融科技配色方案（深蓝+琥珀）已应用",
+        "Fira Code/Fira Sans 字体已引入",
+        "数字等宽字体对齐已启用",
+        "卡片 hover 效果已优化",
+        "数据行 hover 高亮已添加",
+        "可点击元素 cursor-pointer 已统一",
+        "无障碍焦点状态已优化",
+        "prefers-reduced-motion 已支持",
+        "信息密度已保留（基金卡片/弹窗）",
+        "信息层级已保留",
+        "v2 设计令牌已迁移（50个组件）",
+        "深浅主题一致",
+        "组件级令牌已定义"
+      ],
+      "checkpoint_count": 15
+    },
+    {
+      "id": "alert_center",
+      "name": "提醒中心",
+      "description": "顶栏铃铛入口的提醒中心页面，显示所有提醒规则（止盈、止损、价格提醒等）",
+      "status": "active",
+      "version": "2.9.30",
+      "check_points": [
+        "提醒中心正常显示所有启用的提醒规则",
+        "止盈提醒规则与持仓页面止盈提醒卡片数据一致",
+        "提醒规则的触发状态和历史记录正常显示",
+        "新建/编辑/删除提醒规则后数据实时同步",
+        "止盈提醒只显示已达标的记录，与持仓页面止盈提醒卡片数据一致"
+      ],
+      "known_issues": [],
+      "verify_result": "verified",
+      "last_verified": "2026-09-06"
+    },
+    {
+      "id": "global_ui",
+      "name": "全局UI适配与质量",
+      "description": "全局UI适配（灵动岛、安全区域、特殊字符）与UI设计质量检查，集成impeccable的61个确定性检测规则",
+      "status": "active",
+      "version": "2.9.33",
+      "check_points": [
+        "消息提示（Message）位置不被灵动岛遮住",
+        "通知（Notification）位置不被灵动岛遮住",
+        "对话框（Dialog）位置不被灵动岛遮住",
+        "弹窗（Modal）位置不被灵动岛遮住",
+        "使用安全区域适配（env(safe-area-inset-top)）",
+        "移动端和桌面端都能正常显示",
+        "特殊字符使用常见字符，兼容性好",
+        "UI文件修改后必须运行impeccable检测",
+        "检测到的反模式必须修复或记录豁免原因",
+        "字体、颜色、间距必须遵循设计规范",
+        "新增组件必须通过设计质量检查",
+        "响应式适配必须验证"
+      ],
+      "known_issues": [],
+      "verify_result": "verified",
+      "last_verified": "2026-09-06"
+    },
+    {
+      "id": "function_graph_page",
+      "name": "神经网络页面",
+      "description": "功能神经网络可视化页面，用于查看功能依赖图、变更影响分析、测试路径生成等",
+      "status": "active",
+      "version": "2.9.41",
+      "check_points": [
+        "返回栏背景不透明，滚动时不会看到下面内容",
+        "返回按钮字符正常显示，无乱码",
+        "页面滚动正常，内容不被遮挡",
+        "特殊字符使用常见字符，兼容性好",
+        "弹窗标题图标正常显示（无emoji乱码）",
+        "弹窗高度自适应内容（min-height:50vh, max-height:90vh）",
+        "所有中文注释和文本无双重编码乱码"
+      ],
+      "known_issues": [],
+      "verify_result": "verified",
+      "last_verified": "2026-09-07",
+      "superpowers_concepts": [
+        "writing-skills:技能创建最佳实践、可复用能力封装、节点定义规范"
+      ],
+      "trigger_conditions": [
+        "新增神经网络节点时遵循writing-skills节点创建规范",
+        "节点定义不完整（缺少check_points/description）时触发补充",
+        "可复用流程模式应封装为独立节点而非散落在检查点中"
+      ]
+    },
+    {
+      "id": "ui_quality_check",
+      "name": "UI质量检查",
+      "description": "集成impeccable的61个确定性检测规则，对UI文件进行设计质量检查，检测AI生成的常见设计陷阱和反模式",
+      "status": "active",
+      "version": "2.9.33",
+      "parent": "global_ui",
+      "check_points": [
+        "61个确定性检测规则全部启用",
+        "检测命令可重复运行：npx impeccable detect src/",
+        "检测结果记录到ui_issues_tracker节点",
+        "严重问题（side-tab、bounce-easing）必须优先修复",
+        "每次UI变更后必须重新运行检测",
+        "检测规则包括：side-tab、bounce-easing、layout-transition、gradient-text、em-dash-overuse等",
+        "支持JSON输出用于CI/CD集成：npx impeccable detect --json src/",
+        "第一阶段已完成：构建前自动UI检测集成",
+        "ui:check脚本可手动运行检测",
+        "prebuild钩子在构建前自动运行检测",
+        "检测结果按优先级分类（P0/P1/P2/P3）",
+        "检测结果自动保存到.ui-check目录",
+        "P0问题给出详细警告和修复建议",
+        "观察期模式：不阻止构建，仅作警告",
+        "第二阶段已完成：变更准入网关集成",
+        "变更UI检测脚本可只检测变更文件，提高效率",
+        "变更UI检测报告按优先级分类，生成修复建议",
+        "变更记录辅助脚本集成UI检测到变更历史",
+        "变更准入网关UI检测检查清单已建立",
+        "检测结果自动保存到.ui-check/changes/目录",
+        "豁免机制已建立，特殊情况可申请豁免",
+        "UI变更必须运行检测，检测结果记录到变更历史",
+        "第三阶段已完成：自定义检测规则 + 结果自动同步 + 质量门禁",
+        "自定义检测规则：6条投研看板特有设计规范",
+        "检测结果自动同步到神经网络ui_issues_tracker节点",
+        "质量门禁配置：可配置的阈值和4种模式",
+        "质量门禁检查：构建前自动检查是否超过阈值",
+        "豁免机制：特殊情况可申请豁免并记录原因",
+        "完整检测流程：impeccable + 自定义 + 同步 + 门禁",
+        "构建前自动运行完整检测流程（prebuild钩子）",
+        "UI变更时参考impeccable原版23条设计命令作为设计思路指导",
+        "设计命令为指导/参考性质，非强制规则，不纳入质量门禁",
+        "新增组件时运行ui-design-guide.mjs scene new-component获取相关设计命令",
+        "重构页面时运行ui-design-guide.mjs scene refactor-page获取相关设计命令"
+      ],
+      "known_issues": [],
+      "verify_result": "verified",
+      "last_verified": "2026-09-06",
+      "implementation_status": "phase3_completed",
+      "phase1_completed": true,
+      "phase1_details": {
+        "completed_at": "2026-09-06",
+        "features": [
+          "ui:check脚本：可手动运行impeccable检测",
+          "prebuild钩子：构建前自动运行UI检测",
+          "检测结果自动解析：支持impeccable JSON格式",
+          "按优先级分类：P0/P1/P2/P3",
+          "检测结果保存到文件：.ui-check/latest.json和历史文件",
+          "P0问题警告：输出严重问题详情和修复建议",
+          "观察期模式：检测结果仅作警告，不阻止构建"
+        ],
+        "scripts": [
+          "scripts/ui-check.mjs - UI质量检测脚本",
+          "package.json - 添加ui:check和prebuild脚本"
+        ],
+        "directories": [
+          ".ui-check/ - 检测结果保存目录",
+          ".ui-check/history/ - 历史检测结果"
+        ]
+      },
+      "phase2_completed": true,
+      "phase2_details": {
+        "completed_at": "2026-09-06",
+        "features": [
+          "变更UI检测脚本：只检测变更文件，提高效率",
+          "变更UI检测报告生成器：按优先级分类，生成修复建议",
+          "变更记录辅助脚本：集成UI检测到变更历史流程",
+          "变更准入网关UI检测检查清单：完整的检测流程和标准",
+          "检测结果自动保存：.ui-check/latest-change.json和历史文件",
+          "豁免机制：特殊情况可申请豁免并记录原因"
+        ],
+        "scripts": [
+          "scripts/change-ui-check.mjs - 变更UI检测脚本",
+          "scripts/change-record-helper.mjs - 变更记录辅助脚本"
+        ],
+        "docs": [
+          "docs/ui-change-gateway-checklist.md - 变更准入网关UI检测检查清单"
+        ],
+        "commands": [
+          "npm run ui:check - 全量UI质量检测",
+          "npm run ui:check:change <files> - 变更UI检测（只检测变更文件）"
+        ]
+      },
+      "phase3_completed": true,
+      "phase3_details": {
+        "completed_at": "2026-09-06",
+        "features": [
+          "自定义检测规则：6条投研看板特有设计规范",
+          "检测结果自动同步：自动更新神经网络ui_issues_tracker节点",
+          "质量门禁配置：可配置的阈值和模式",
+          "质量门禁检查：构建前自动检查是否超过阈值",
+          "豁免机制：特殊情况可申请豁免",
+          "完整检测流程：impeccable检测 + 自定义检测 + 结果同步 + 门禁检查"
+        ],
+        "custom_rules": [
+          "fund-card-consistency (P1) - 基金卡片设计一致性",
+          "up-down-color-standard (P0) - 涨跌色使用规范",
+          "number-format-standard (P2) - 数字格式规范",
+          "data-density-standard (P2) - 数据密度规范",
+          "responsive-adaptation (P1) - 响应式适配检查",
+          "empty-state-design (P2) - 空状态设计规范"
+        ],
+        "gate_modes": [
+          "observe - 观察模式：仅警告，不阻止构建",
+          "warn - 警告模式：P0问题警告，不阻止构建",
+          "strict - 严格模式：P0问题阻止构建",
+          "full - 完全模式：P0和P1问题阻止构建"
+        ],
+        "scripts": [
+          "scripts/custom-ui-check.mjs - 自定义UI检测脚本",
+          "scripts/sync-ui-results.mjs - 检测结果同步脚本",
+          "scripts/ui-gate-check.mjs - 质量门禁检查脚本"
+        ],
+        "config": [
+          ".ui-check/gate-config.json - 质量门禁配置"
+        ],
+        "commands": [
+          "npm run ui:check - impeccable全量检测",
+          "npm run ui:check:custom - 自定义检测",
+          "npm run ui:check:change - 变更检测",
+          "npm run ui:sync - 结果同步到神经网络",
+          "npm run ui:gate - 质量门禁检查",
+          "npm run ui:check:all - 完整检测流程"
+        ]
+      },
+      "superpowers_concepts": [
+        "test-driven-development:RED-GREEN-REFACTOR循环，先定义预期再验证修复"
+      ],
+      "trigger_conditions": [
+        "UI变更执行检测前先定义预期结果（RED阶段）",
+        "检测发现问题后修复并重新验证（GREEN阶段）",
+        "修复后重构代码保持检测通过（REFACTOR阶段）",
+        "自定义检测规则新增时遵循TDD流程"
+      ]
+    },
+    {
+      "id": "ui_issues_tracker",
+      "name": "UI问题跟踪",
+      "description": "记录和跟踪检测到的UI设计问题，包括反模式类型、涉及文件、修复状态、优先级等，持续跟踪和管理UI质量问题",
+      "status": "active",
+      "version": "2.9.33",
+      "parent": "ui_quality_check",
+      "check_points": [
+        "记录所有检测到的UI设计问题",
+        "每个问题记录：文件、行号、类型、状态、修复时间",
+        "已修复问题标记为resolved",
+        "豁免问题记录豁免原因",
+        "定期重新检测，确保问题不复发",
+        "按优先级排序：P0(严重) > P1(高) > P2(中) > P3(低)"
+      ],
+      "known_issues": [
+        {
+          "id": "imp-side-tab-src/components/fund/FundScoreDetail.vue-227",
+          "type": "side-tab",
+          "description": "Thick colored border on one side of a card — the most recognizable tell of AI-generated UIs. Use a subtler accent or remove it entirely.",
+          "priority": "P0",
+          "status": "open",
+          "file": "src/components/fund/FundScoreDetail.vue",
+          "line": 227,
+          "source": "impeccable"
+        },
+        {
+          "id": "imp-side-tab-src/components/portfolio/InvestmentRecordList.vue-240",
+          "type": "side-tab",
+          "description": "Thick colored border on one side of a card — the most recognizable tell of AI-generated UIs. Use a subtler accent or remove it entirely.",
+          "priority": "P0",
+          "status": "open",
+          "file": "src/components/portfolio/InvestmentRecordList.vue",
+          "line": 240,
+          "source": "impeccable"
+        },
+        {
+          "id": "imp-side-tab-src/components/portfolio/InvestmentRecordList.vue-244",
+          "type": "side-tab",
+          "description": "Thick colored border on one side of a card — the most recognizable tell of AI-generated UIs. Use a subtler accent or remove it entirely.",
+          "priority": "P0",
+          "status": "open",
+          "file": "src/components/portfolio/InvestmentRecordList.vue",
+          "line": 244,
+          "source": "impeccable"
+        },
+        {
+          "id": "imp-side-tab-src/components/portfolio/InvestmentRecordList.vue-408",
+          "type": "side-tab",
+          "description": "Thick colored border on one side of a card — the most recognizable tell of AI-generated UIs. Use a subtler accent or remove it entirely.",
+          "priority": "P0",
+          "status": "open",
+          "file": "src/components/portfolio/InvestmentRecordList.vue",
+          "line": 408,
+          "source": "impeccable"
+        },
+        {
+          "id": "imp-side-tab-src/components/portfolio/InvestmentRecordList.vue-412",
+          "type": "side-tab",
+          "description": "Thick colored border on one side of a card — the most recognizable tell of AI-generated UIs. Use a subtler accent or remove it entirely.",
+          "priority": "P0",
+          "status": "open",
+          "file": "src/components/portfolio/InvestmentRecordList.vue",
+          "line": 412,
+          "source": "impeccable"
+        },
+        {
+          "id": "custom-fund-card-consistency-src\\components\\FundCard.vue-0",
+          "type": "fund-card-consistency",
+          "description": "基金卡片中发现37个硬编码颜色值，建议使用CSS变量",
+          "priority": "P1",
+          "status": "open",
+          "file": "src\\components\\FundCard.vue",
+          "line": 0,
+          "source": "custom"
+        }
+      ],
+      "verify_result": "verified",
+      "last_verified": "2026-09-07",
+      "summary": {
+        "total": 9,
+        "byPriority": {
+          "P0": 5,
+          "P1": 1,
+          "P2": 2,
+          "P3": 1
+        },
+        "byRule": {
+          "side-tab": 5,
+          "fund-card-consistency": 1,
+          "empty-state-design": 2,
+          "em-dash-overuse": 1
+        },
+        "byFile": {
+          "src/components/fund/FundScoreDetail.vue": 1,
+          "src/components/portfolio/InvestmentRecordList.vue": 4,
+          "src\\components\\FundCard.vue": 1,
+          "src\\views\\WatchView.vue": 1,
+          "src\\views\\PortfolioAlertsView.vue": 1,
+          "src/stores/theme.ts": 1
+        },
+        "bySource": {
+          "impeccable": 6,
+          "custom": 3
+        }
+      },
+      "data_source": "自动同步自ui:check和custom-ui-check检测结果",
+      "auto_sync": true,
+      "last_detection": "2026-09-06",
+      "detection_command": "npm run ui:check",
+      "issues": [
+        {
+          "id": "imp-side-tab-src/components/fund/FundScoreDetail.vue-227",
+          "source": "impeccable",
+          "rule": "side-tab",
+          "priority": "P0",
+          "file": "src/components/fund/FundScoreDetail.vue",
+          "line": 227,
+          "message": "Thick colored border on one side of a card — the most recognizable tell of AI-generated UIs. Use a subtler accent or remove it entirely.",
+          "snippet": "",
+          "status": "open",
+          "detected_at": "2026-09-07T08:11:01.489Z"
+        },
+        {
+          "id": "imp-side-tab-src/components/portfolio/InvestmentRecordList.vue-240",
+          "source": "impeccable",
+          "rule": "side-tab",
+          "priority": "P0",
+          "file": "src/components/portfolio/InvestmentRecordList.vue",
+          "line": 240,
+          "message": "Thick colored border on one side of a card — the most recognizable tell of AI-generated UIs. Use a subtler accent or remove it entirely.",
+          "snippet": "",
+          "status": "open",
+          "detected_at": "2026-09-07T08:11:01.489Z"
+        },
+        {
+          "id": "imp-side-tab-src/components/portfolio/InvestmentRecordList.vue-244",
+          "source": "impeccable",
+          "rule": "side-tab",
+          "priority": "P0",
+          "file": "src/components/portfolio/InvestmentRecordList.vue",
+          "line": 244,
+          "message": "Thick colored border on one side of a card — the most recognizable tell of AI-generated UIs. Use a subtler accent or remove it entirely.",
+          "snippet": "",
+          "status": "open",
+          "detected_at": "2026-09-07T08:11:01.489Z"
+        },
+        {
+          "id": "imp-side-tab-src/components/portfolio/InvestmentRecordList.vue-408",
+          "source": "impeccable",
+          "rule": "side-tab",
+          "priority": "P0",
+          "file": "src/components/portfolio/InvestmentRecordList.vue",
+          "line": 408,
+          "message": "Thick colored border on one side of a card — the most recognizable tell of AI-generated UIs. Use a subtler accent or remove it entirely.",
+          "snippet": "",
+          "status": "open",
+          "detected_at": "2026-09-07T08:11:01.489Z"
+        },
+        {
+          "id": "imp-side-tab-src/components/portfolio/InvestmentRecordList.vue-412",
+          "source": "impeccable",
+          "rule": "side-tab",
+          "priority": "P0",
+          "file": "src/components/portfolio/InvestmentRecordList.vue",
+          "line": 412,
+          "message": "Thick colored border on one side of a card — the most recognizable tell of AI-generated UIs. Use a subtler accent or remove it entirely.",
+          "snippet": "",
+          "status": "open",
+          "detected_at": "2026-09-07T08:11:01.489Z"
+        },
+        {
+          "id": "custom-fund-card-consistency-src\\components\\FundCard.vue-0",
+          "source": "custom",
+          "rule": "fund-card-consistency",
+          "priority": "P1",
+          "file": "src\\components\\FundCard.vue",
+          "line": 0,
+          "message": "基金卡片中发现37个硬编码颜色值，建议使用CSS变量",
+          "snippet": "#FFD700, #FFA500, #5C3D00",
+          "category": "consistency",
+          "status": "open",
+          "detected_at": "2026-09-07T08:11:01.970Z"
+        },
+        {
+          "id": "custom-empty-state-design-src\\views\\WatchView.vue-0",
+          "source": "custom",
+          "rule": "empty-state-design",
+          "priority": "P2",
+          "file": "src\\views\\WatchView.vue",
+          "line": 0,
+          "message": "列表页面缺少空状态设计，建议添加空状态提示（如\"暂无数据\"）",
+          "snippet": "列表渲染",
+          "category": "ux",
+          "status": "open",
+          "detected_at": "2026-09-07T08:11:01.970Z"
+        },
+        {
+          "id": "custom-empty-state-design-src\\views\\PortfolioAlertsView.vue-0",
+          "source": "custom",
+          "rule": "empty-state-design",
+          "priority": "P2",
+          "file": "src\\views\\PortfolioAlertsView.vue",
+          "line": 0,
+          "message": "列表页面缺少空状态设计，建议添加空状态提示（如\"暂无数据\"）",
+          "snippet": "列表渲染",
+          "category": "ux",
+          "status": "open",
+          "detected_at": "2026-09-07T08:11:01.970Z"
+        },
+        {
+          "id": "imp-em-dash-overuse-src/stores/theme.ts-0",
+          "source": "impeccable",
+          "rule": "em-dash-overuse",
+          "priority": "P3",
+          "file": "src/stores/theme.ts",
+          "line": 0,
+          "message": "More than two em-dashes (— or --) in body copy is an AI cadence tell. Use commas, colons, periods, or parentheses instead.",
+          "snippet": "",
+          "status": "open",
+          "detected_at": "2026-09-07T08:11:01.489Z"
+        }
+      ],
+      "last_sync": "2026-09-07T08:11:02.420Z",
+      "sync_command": "npm run ui:sync",
+      "data_sources": [
+        "impeccable",
+        "custom"
+      ]
+    },
+    {
+      "id": "systematic-debugging",
+      "name": "系统化调试",
+      "layer": "process",
+      "status": "healthy",
+      "version": "1.0.0",
+      "description": "C1+ superpowers系统化调试节点，4阶段根因分析（复现→假设→验证→修复），防御性深度，基于条件的等待。处理已知问题和回归缺陷。",
+      "superpowers_concepts": [
+        "systematic-debugging:4阶段根因分析、防御性深度、基于条件的等待"
+      ],
+      "trigger_conditions": [
+        "节点出现known_issues未修复时自动触发调试流程",
+        "测试失败或回归缺陷出现时触发",
+        "生产环境异常报告时触发",
+        "变更后功能异常时触发"
+      ],
+      "check_points": [
+        "阶段1-复现：稳定复现问题，记录复现步骤和环境",
+        "阶段2-假设：基于证据提出根因假设，不猜测",
+        "阶段3-验证：设计实验验证假设，排除法缩小范围",
+        "阶段4-修复：根因级修复，非症状级补丁",
+        "防御性深度：修复后添加防护措施防止复发",
+        "基于条件的等待：异步问题等待特定条件而非固定sleep",
+        "回归验证：修复后运行完整测试确保无新问题",
+        "问题记录：根因和修复方案记录到对应节点known_issues"
+      ],
+      "known_issues": [],
+      "code_files": [],
+      "doc_sections": [
+        "docs/change-workflow-7stage.md#阶段4"
+      ],
+      "config_keys": [],
+      "last_verified": "2026-09-06",
+      "verify_result": "verified"
+    },
+    {
+      "id": "using-git-worktrees",
+      "name": "隔离工作区",
+      "layer": "process",
+      "status": "healthy",
+      "version": "1.0.0",
+      "description": "C1+ superpowers Git Worktrees隔离工作区节点，支持并行开发分支、干净测试基线，确保变更在隔离环境中开发和验证。",
+      "superpowers_concepts": [
+        "using-git-worktrees:并行开发分支、干净测试基线、隔离工作区"
+      ],
+      "trigger_conditions": [
+        "多变更并行开发时触发隔离工作区创建",
+        "需要干净测试基线验证时触发",
+        "高风险变更（refactor/核心业务）要求隔离开发",
+        "主工作区有未完成变更时新变更应使用独立worktree"
+      ],
+      "check_points": [
+        "功能分支已创建，基于最新main/master",
+        "git worktree隔离工作区已创建（如需要）",
+        "干净基线验证：git status无未提交修改",
+        "基线构建通过：npm run build成功",
+        "基线测试通过：现有测试全部通过",
+        "变更只在隔离分支中进行，不直接在main提交",
+        "并行变更使用独立worktree互不干扰",
+        "完成后worktree已清理，分支已合并或标记"
+      ],
+      "known_issues": [],
+      "code_files": [],
+      "doc_sections": [
+        "docs/change-workflow-7stage.md#阶段3"
+      ],
+      "config_keys": [],
+      "last_verified": "2026-09-06",
+      "verify_result": "verified"
+    },
+    {
+      "id": "score_calc",
+      "name": "分数计算服务",
+      "description": "基金评分计算服务，包含compute_scores_v2（数据库存储，全局统一）和scoring_v3（历史遗留，已废弃）两套算法。v2.9.51起榜单API不再使用scoring_v3覆盖分数，全部统一使用compute_scores_v2。",
+      "version": "2.9.51",
+      "status": "healthy",
+      "verify_result": "needs_recheck",
+      "layer": "business",
+      "code_files": [
+        "backend/modules/score/score_service.py",
+        "backend/modules/score/scoring_v3.py",
+        "backend/modules/score/scoring.py"
+      ],
+      "config_keys": [],
+      "check_points": [
+        "compute_scores_v2算法正确，分数写入funds表的score/ad_score/earn_score字段",
+        "scoring_v3.compute_pool_scores仅用于历史兼容，不再被榜单API调用",
+        "get_pool_score缓存1小时TTL，仅在显式调用时使用",
+        "一键更新阶段4对上榜+自选基金批量调用compute_scores_v2",
+        "所有展示页面（卡片/弹窗/对比）统一使用compute_scores_v2分数"
+      ],
+      "known_issues": [
+        {
+          "id": "score_calc_001",
+          "status": "resolved",
+          "description": "scoring_v3与compute_scores_v2两套算法并存，榜单API使用scoring_v3覆盖导致卡片与弹窗分数不一致",
+          "found_version": "2.1.5",
+          "fixed_version": "2.9.51",
+          "root_cause": "榜单APIrank/router.py中使用get_pool_score(scoring_v3)覆盖rank_snapshots.meta中的compute_scores_v2分数",
+          "solution": "删除榜单API中的get_pool_score覆盖逻辑，统一使用compute_scores_v2分数",
+          "severity": "high"
+        }
+      ]
+    },
+    {
+      "id": "rank_api",
+      "name": "榜单API路由",
+      "description": "榜单查询API路由（/api/ranks），从rank_snapshots表读取榜单数据，批量补充sec/themes字段，返回按panel/sub组织的榜单数据。v2.9.51起删除get_pool_score分数覆盖逻辑，直接使用rank_snapshots.meta中的compute_scores_v2分数。",
+      "version": "2.9.51",
+      "status": "healthy",
+      "verify_result": "needs_recheck",
+      "layer": "business",
+      "code_files": [
+        "backend/modules/rank/router.py"
+      ],
+      "config_keys": [],
+      "check_points": [
+        "/api/ranks接口正常返回，按panel/sub组织数据",
+        "rank_snapshots.meta中的分数直接返回，不被scoring_v3覆盖",
+        "sec/themes字段从funds表批量补充",
+        "推荐榜单按综合分降序重排，rank序号正确",
+        "panel/sub参数筛选正常，白名单过滤生效"
+      ],
+      "known_issues": []
+    },
+    {
+      "id": "detail_api",
+      "name": "详情API路由",
+      "description": "基金详情API路由（/api/fund/anti_detail），构建基金详情弹窗所需的完整数据，包括净值序列、统计指标、抗跌分析、大涨日分析、增强数据等。v2.9.43起统一从funds表读取compute_scores_v2分数，与卡片/对比页保持一致。",
+      "version": "2.9.51",
+      "status": "healthy",
+      "verify_result": "needs_recheck",
+      "layer": "business",
+      "code_files": [
+        "backend/modules/anti/router.py",
+        "backend/modules/anti/anti_detail.py"
+      ],
+      "config_keys": [],
+      "check_points": [
+        "/api/fund/anti_detail接口正常返回完整详情数据",
+        "fund.resist中的ad_score/earn_score/dual从funds表读取compute_scores_v2分数",
+        "长期指标(m3/m6/y1/ret2m)统一从funds表取，与卡片一致",
+        "5分钟TTL缓存正常，forceRefresh可跳过缓存",
+        "净值序列、抗跌分析、大涨日分析数据完整"
+      ],
+      "known_issues": []
+    },
+    {
+      "id": "gateway_analyzer_init",
+      "name": "初始化网关分析器",
+      "layer": "process",
+      "status": "new",
+      "version": "2.9.54",
+      "description": "初始化网关分析器\n\nArgs:\n    graph_path: function_graph.json的路径（相对于backend/目录）\n    max_depth: BFS最大传播深度，默认3\n    risk_threshold: 风险报告阈值，低于此等级的风险不显示（HIGH/MEDIUM/LOW）\n\nRaises:\n    FileNotFoundError: 当graph_path指定",
+      "check_points": [],
+      "known_issues": [],
+      "code_files": [
+        "modules/superpower/gateway_analyzer.py"
+      ],
+      "doc_sections": [],
+      "config_keys": [],
+      "last_verified": "2026-09-07",
+      "verify_result": "auto_detected"
+    },
+    {
+      "id": "gateway_analyzer_load_graph",
+      "name": "加载function_graph.json神经网络文件",
+      "layer": "process",
+      "status": "new",
+      "version": "2.9.54",
+      "description": "加载function_graph.json神经网络文件\n\n内部方法，解析JSON并提取nodes、edges、meta信息。\n同时构建node_info字典，便于按id快速查找节点详情。",
+      "check_points": [],
+      "known_issues": [],
+      "code_files": [
+        "modules/superpower/gateway_analyzer.py"
+      ],
+      "doc_sections": [],
+      "config_keys": [],
+      "last_verified": "2026-09-07",
+      "verify_result": "auto_detected"
+    },
+    {
+      "id": "gateway_analyzer_build_adjacency",
+      "name": "构建正向邻接表和反向邻接表",
+      "layer": "process",
+      "status": "new",
+      "version": "2.9.54",
+      "description": "构建正向邻接表和反向邻接表\n\n兼容边的source/target字段可能是source/target或from/to的情况。\n- adj: 正向邻接表，adj[src] = [dst1, dst2, ...] 表示src依赖/影响dst\n- rev_adj: 反向邻接表，rev_adj[dst] = [src1, src2, ...] 表示依赖dst的节点",
+      "check_points": [],
+      "known_issues": [],
+      "code_files": [
+        "modules/superpower/gateway_analyzer.py"
+      ],
+      "doc_sections": [],
+      "config_keys": [],
+      "last_verified": "2026-09-07",
+      "verify_result": "auto_detected"
+    },
+    {
+      "id": "gateway_analyzer_analyze",
+      "name": "执行完整网关分析",
+      "layer": "process",
+      "status": "new",
+      "version": "2.9.54",
+      "description": "执行完整网关分析\n\n分析流程：\n1. 验证核心节点是否存在于神经网络中\n2. BFS正向影响传播（下游受影响节点）\n3. BFS反向影响传播（上游依赖方节点）\n4. 计算影响范围统计数据\n5. 自动识别风险点\n6. 自动生成检查清单\n7. 组装GatewayAnalysisResult\n\nArgs:\n    change_id: 变更编号，如 \"CHG-TEST-001\"\n    core_nod",
+      "check_points": [],
+      "known_issues": [],
+      "code_files": [
+        "modules/superpower/gateway_analyzer.py"
+      ],
+      "doc_sections": [],
+      "config_keys": [],
+      "last_verified": "2026-09-07",
+      "verify_result": "auto_detected"
+    },
+    {
+      "id": "gateway_analyzer_bfs",
+      "name": "BFS广度优先遍历",
+      "layer": "process",
+      "status": "new",
+      "version": "2.9.54",
+      "description": "BFS广度优先遍历\n\n从起始节点出发，沿邻接表进行广度优先搜索，返回所有可达节点\n及其传播深度。起始节点的深度为0。\n\n参考实现：backend/_gateway_047_superpower_fusion.py中的bfs函数\n\nArgs:\n    start_nodes: 起始节点列表\n    adjacency: 邻接表（正向或反向）\n    max_depth: 最大搜索深度\n\nReturn",
+      "check_points": [],
+      "known_issues": [],
+      "code_files": [
+        "modules/superpower/gateway_analyzer.py"
+      ],
+      "doc_sections": [],
+      "config_keys": [],
+      "last_verified": "2026-09-07",
+      "verify_result": "auto_detected"
+    },
+    {
+      "id": "gateway_analyzer_compute_stats",
+      "name": "计算影响范围统计数据",
+      "layer": "process",
+      "status": "new",
+      "version": "2.9.54",
+      "description": "计算影响范围统计数据\n\n统计内容：\n- 正向/反向影响节点总数\n- 按深度分布的节点数\n- 涉及的代码文件数（从节点的code_files字段收集）\n- 上下游边数\n- 涉及的层级分布\n- 核心业务层节点数\n\nArgs:\n    forward: 正向影响节点集合\n    backward: 反向影响节点集合\n    f_depth: 正向深度映射\n    b_depth: 反向深度映射\n\nRet",
+      "check_points": [],
+      "known_issues": [],
+      "code_files": [
+        "modules/superpower/gateway_analyzer.py"
+      ],
+      "doc_sections": [],
+      "config_keys": [],
+      "last_verified": "2026-09-07",
+      "verify_result": "auto_detected"
+    },
+    {
+      "id": "gateway_analyzer_identify_risks",
+      "name": "根据影响范围自动识别风险点",
+      "layer": "process",
+      "status": "new",
+      "version": "2.9.54",
+      "description": "根据影响范围自动识别风险点\n\n风险识别规则（可扩展）：\n1. 影响范围大小：影响节点>20为HIGH，>10为MEDIUM，否则LOW\n2. 涉及核心业务层节点：business层节点>3为HIGH，>0为MEDIUM\n3. 修改神经网络本身：核心节点包含function_graph或change_gateway为HIGH\n4. 涉及数据库操作：影响范围内包含数据库相关节点为MEDIUM\n5. 涉",
+      "check_points": [],
+      "known_issues": [],
+      "code_files": [
+        "modules/superpower/gateway_analyzer.py"
+      ],
+      "doc_sections": [],
+      "config_keys": [],
+      "last_verified": "2026-09-07",
+      "verify_result": "auto_detected"
+    },
+    {
+      "id": "gateway_analyzer_generate_checklist",
+      "name": "根据影响范围和风险点自动生成检查清单",
+      "layer": "process",
+      "status": "new",
+      "version": "2.9.54",
+      "description": "根据影响范围和风险点自动生成检查清单\n\n检查清单分级：\n- must（必须）：高风险项对应的检查，核心功能验证\n- should（应该）：中风险项对应的检查，重要功能验证\n- optional（可选）：低风险项对应的检查，优化建议\n\n检查阶段：\n- modify：修改阶段检查\n- verify：验证阶段检查\n- update：神经网络更新阶段检查\n- record：记录阶段检查\n\nArgs:",
+      "check_points": [],
+      "known_issues": [],
+      "code_files": [
+        "modules/superpower/gateway_analyzer.py"
+      ],
+      "doc_sections": [],
+      "config_keys": [],
+      "last_verified": "2026-09-07",
+      "verify_result": "auto_detected"
+    },
+    {
+      "id": "gateway_analyzer_generate_report",
+      "name": "生成结构化文本报告",
+      "layer": "process",
+      "status": "new",
+      "version": "2.9.54",
+      "description": "生成结构化文本报告\n\n报告包含：\n1. 变更信息（编号、标题、核心节点、分析时间）\n2. 影响范围（正向/反向节点数、深度分布、涉及文件）\n3. 风险点（按等级排列的风险详情）\n4. 检查清单（按阶段和优先级排列）\n5. 统计数据（层级分布、数据库/API影响等）\n\nArgs:\n    result: 网关分析结果\n\nReturns:\n    str: 结构化文本报告",
+      "check_points": [],
+      "known_issues": [],
+      "code_files": [
+        "modules/superpower/gateway_analyzer.py"
+      ],
+      "doc_sections": [],
+      "config_keys": [],
+      "last_verified": "2026-09-07",
+      "verify_result": "auto_detected"
+    },
+    {
+      "id": "gateway_analyzer_to_dict",
+      "name": "将GatewayAnalysisResult序列化为字典",
+      "layer": "process",
+      "status": "new",
+      "version": "2.9.54",
+      "description": "将GatewayAnalysisResult序列化为字典\n\n注意：Set类型会转换为排序后的列表，便于JSON序列化。\n\nArgs:\n    result: 网关分析结果\n\nReturns:\n    Dict[str, Any]: 可JSON序列化的字典",
+      "check_points": [],
+      "known_issues": [],
+      "code_files": [
+        "modules/superpower/gateway_analyzer.py"
+      ],
+      "doc_sections": [],
+      "config_keys": [],
+      "last_verified": "2026-09-07",
+      "verify_result": "auto_detected"
+    }
+  ],
+  "edges": [
+    {
+      "source": "data_source",
+      "target": "nav_fetch",
+      "type": "dependency",
+      "label": "数据源配置"
+    },
+    {
+      "source": "data_source",
+      "target": "holdings_fetch",
+      "type": "dependency",
+      "label": "数据源配置"
+    },
+    {
+      "source": "data_source",
+      "target": "system_monitor",
+      "type": "data_flow",
+      "label": "数据源状态"
+    },
+    {
+      "source": "fund_universe",
+      "target": "nav_fetch",
+      "type": "data_flow",
+      "label": "基金代码池"
+    },
+    {
+      "source": "fund_universe",
+      "target": "holdings_fetch",
+      "type": "data_flow",
+      "label": "基金代码池"
+    },
+    {
+      "source": "fund_universe",
+      "target": "rank_calc",
+      "type": "data_flow",
+      "label": "候选基金池"
+    },
+    {
+      "source": "nav_fetch",
+      "target": "metrics_calc",
+      "type": "data_flow",
+      "label": "净值数据"
+    },
+    {
+      "source": "nav_fetch",
+      "target": "fund_card",
+      "type": "data_flow",
+      "label": "当日净值"
+    },
+    {
+      "source": "nav_fetch",
+      "target": "portfolio",
+      "type": "data_flow",
+      "label": "净值用于收益计算"
+    },
+    {
+      "source": "nav_fetch",
+      "target": "log_manager",
+      "type": "data_flow",
+      "label": "抓取日志"
+    },
+    {
+      "source": "holdings_fetch",
+      "target": "fund_modal",
+      "type": "data_flow",
+      "label": "前十大持仓"
+    },
+    {
+      "source": "holdings_fetch",
+      "target": "rank_calc",
+      "type": "data_flow",
+      "label": "赛道标签"
+    },
+    {
+      "source": "metrics_calc",
+      "target": "rank_calc",
+      "type": "data_flow",
+      "label": "指标数据"
+    },
+    {
+      "source": "metrics_calc",
+      "target": "compare",
+      "type": "data_flow",
+      "label": "指标数据"
+    },
+    {
+      "source": "metrics_calc",
+      "target": "fund_modal",
+      "type": "data_flow",
+      "label": "完整指标"
+    },
+    {
+      "source": "metrics_calc",
+      "target": "fund_card",
+      "type": "data_flow",
+      "label": "卡片指标"
+    },
+    {
+      "source": "one_click_update",
+      "target": "nav_fetch",
+      "type": "call",
+      "label": "调用净值抓取"
+    },
+    {
+      "source": "one_click_update",
+      "target": "holdings_fetch",
+      "type": "call",
+      "label": "调用持仓抓取"
+    },
+    {
+      "source": "one_click_update",
+      "target": "metrics_calc",
+      "type": "call",
+      "label": "调用指标计算"
+    },
+    {
+      "source": "one_click_update",
+      "target": "rank_calc",
+      "type": "call",
+      "label": "调用榜单计算"
+    },
+    {
+      "source": "one_click_update",
+      "target": "log_manager",
+      "type": "data_flow",
+      "label": "更新日志"
+    },
+    {
+      "source": "one_click_update",
+      "target": "system_monitor",
+      "type": "test_related",
+      "label": "运行状态"
+    },
+    {
+      "source": "one_click_update",
+      "target": "mine_page",
+      "type": "ui_sync",
+      "label": "实时进度"
+    },
+    {
+      "source": "algo_config",
+      "target": "rank_calc",
+      "type": "dependency",
+      "label": "算法参数"
+    },
+    {
+      "source": "algo_config",
+      "target": "metrics_calc",
+      "type": "dependency",
+      "label": "计算参数"
+    },
+    {
+      "source": "algo_config",
+      "target": "settings",
+      "type": "ui_sync",
+      "label": "算法说明展示"
+    },
+    {
+      "source": "algo_config",
+      "target": "chain_doc",
+      "type": "doc_sync",
+      "label": "算法变更需更新文档"
+    },
+    {
+      "source": "rank_calc",
+      "target": "rank_page",
+      "type": "data_flow",
+      "label": "榜单数据"
+    },
+    {
+      "source": "rank_calc",
+      "target": "chain_doc",
+      "type": "doc_sync",
+      "label": "算法变更需更新文档"
+    },
+    {
+      "source": "rank_calc",
+      "target": "settings",
+      "type": "ui_sync",
+      "label": "算法说明需同步"
+    },
+    {
+      "source": "watchlist",
+      "target": "watch_page",
+      "type": "data_flow",
+      "label": "自选列表"
+    },
+    {
+      "source": "watchlist",
+      "target": "compare",
+      "type": "data_flow",
+      "label": "对比基金选择"
+    },
+    {
+      "source": "compare",
+      "target": "compare_page",
+      "type": "data_flow",
+      "label": "对比结果"
+    },
+    {
+      "source": "portfolio",
+      "target": "portfolio_page",
+      "type": "data_flow",
+      "label": "持仓数据"
+    },
+    {
+      "source": "portfolio",
+      "target": "profit_alert",
+      "type": "dependency",
+      "label": "持仓用于止盈判断"
+    },
+    {
+      "source": "profit_alert",
+      "target": "portfolio_page",
+      "type": "ui_sync",
+      "label": "止盈弹窗展示"
+    },
+    {
+      "source": "rank_page",
+      "target": "fund_card",
+      "type": "call",
+      "label": "使用基金卡片组件"
+    },
+    {
+      "source": "watch_page",
+      "target": "fund_card",
+      "type": "call",
+      "label": "使用基金卡片组件"
+    },
+    {
+      "source": "fund_card",
+      "target": "fund_modal",
+      "type": "call",
+      "label": "点击弹出详情"
+    },
+    {
+      "source": "rank_page",
+      "target": "fund_modal",
+      "type": "test_related",
+      "label": "数据一致性验证"
+    },
+    {
+      "source": "watch_page",
+      "target": "fund_modal",
+      "type": "test_related",
+      "label": "数据一致性验证"
+    },
+    {
+      "source": "compare_page",
+      "target": "fund_modal",
+      "type": "test_related",
+      "label": "数据一致性验证"
+    },
+    {
+      "source": "mine_page",
+      "target": "settings",
+      "type": "call",
+      "label": "算法设置入口"
+    },
+    {
+      "source": "mine_page",
+      "target": "system_monitor",
+      "type": "call",
+      "label": "系统监控入口"
+    },
+    {
+      "source": "mine_page",
+      "target": "log_manager",
+      "type": "call",
+      "label": "日志管理入口"
+    },
+    {
+      "source": "mine_page",
+      "target": "version_mgmt",
+      "type": "call",
+      "label": "版本信息入口"
+    },
+    {
+      "source": "mine_page",
+      "target": "one_click_update",
+      "type": "call",
+      "label": "一键更新入口"
+    },
+    {
+      "source": "version_mgmt",
+      "target": "chain_doc",
+      "type": "doc_sync",
+      "label": "版本变更需更新文档"
+    },
+    {
+      "source": "version_mgmt",
+      "target": "mine_page",
+      "type": "ui_sync",
+      "label": "版本号展示"
+    },
+    {
+      "source": "nav_fetch",
+      "target": "chain_doc",
+      "type": "doc_sync",
+      "label": "抓取逻辑变更需更新文档"
+    },
+    {
+      "source": "metrics_calc",
+      "target": "chain_doc",
+      "type": "doc_sync",
+      "label": "指标计算变更需更新文档"
+    },
+    {
+      "source": "compare",
+      "target": "chain_doc",
+      "type": "doc_sync",
+      "label": "对比逻辑变更需更新文档"
+    },
+    {
+      "source": "portfolio",
+      "target": "chain_doc",
+      "type": "doc_sync",
+      "label": "持仓逻辑变更需更新文档"
+    },
+    {
+      "source": "profit_alert",
+      "target": "chain_doc",
+      "type": "doc_sync",
+      "label": "止盈逻辑变更需更新文档"
+    },
+    {
+      "source": "rank_page",
+      "target": "chain_doc",
+      "type": "doc_sync",
+      "label": "展示逻辑变更需更新文档"
+    },
+    {
+      "source": "watch_page",
+      "target": "chain_doc",
+      "type": "doc_sync",
+      "label": "展示逻辑变更需更新文档"
+    },
+    {
+      "source": "compare_page",
+      "target": "chain_doc",
+      "type": "doc_sync",
+      "label": "展示逻辑变更需更新文档"
+    },
+    {
+      "source": "portfolio_page",
+      "target": "chain_doc",
+      "type": "doc_sync",
+      "label": "展示逻辑变更需更新文档"
+    },
+    {
+      "source": "fund_card",
+      "target": "chain_doc",
+      "type": "doc_sync",
+      "label": "组件变更需更新文档"
+    },
+    {
+      "source": "fund_modal",
+      "target": "chain_doc",
+      "type": "doc_sync",
+      "label": "弹窗变更需更新文档"
+    },
+    {
+      "source": "rank_calc",
+      "target": "fund_card",
+      "type": "test_related",
+      "label": "榜单数据展示验证"
+    },
+    {
+      "source": "rank_calc",
+      "target": "compare",
+      "type": "test_related",
+      "label": "榜单基金对比验证"
+    },
+    {
+      "source": "metrics_calc",
+      "target": "rank_page",
+      "type": "test_related",
+      "label": "指标展示验证"
+    },
+    {
+      "source": "metrics_calc",
+      "target": "compare_page",
+      "type": "test_related",
+      "label": "指标对比验证"
+    },
+    {
+      "source": "data_source",
+      "target": "chain_doc",
+      "type": "doc_sync",
+      "label": "数据源变更需更新文档"
+    },
+    {
+      "source": "fund_universe",
+      "target": "chain_doc",
+      "type": "doc_sync",
+      "label": "基金池变更需更新文档"
+    },
+    {
+      "source": "holdings_fetch",
+      "target": "chain_doc",
+      "type": "doc_sync",
+      "label": "持仓抓取变更需更新文档"
+    },
+    {
+      "source": "system_monitor",
+      "target": "chain_doc",
+      "type": "doc_sync",
+      "label": "监控变更需更新文档"
+    },
+    {
+      "source": "log_manager",
+      "target": "chain_doc",
+      "type": "doc_sync",
+      "label": "日志变更需更新文档"
+    },
+    {
+      "source": "settings",
+      "target": "chain_doc",
+      "type": "doc_sync",
+      "label": "设置变更需更新文档"
+    },
+    {
+      "source": "market_page",
+      "target": "chain_doc",
+      "type": "doc_sync",
+      "label": "市场页变更需更新文档"
+    },
+    {
+      "source": "mine_page",
+      "target": "chain_doc",
+      "type": "doc_sync",
+      "label": "我的页变更需更新文档"
+    },
+    {
+      "source": "nav_fetch",
+      "target": "data_quality",
+      "type": "data_flow",
+      "description": "净值数据流入质量校验",
+      "label": "净值数据流入质量校验"
+    },
+    {
+      "source": "data_quality",
+      "target": "metrics_calc",
+      "type": "data_flow",
+      "description": "校验后净值数据流入指标计算",
+      "label": "校验后数据流入指标计算"
+    },
+    {
+      "source": "data_quality",
+      "target": "one_click_update",
+      "type": "affects",
+      "description": "一键更新时统计数据质量告警",
+      "label": "数据质量影响更新流程"
+    },
+    {
+      "source": "data_quality",
+      "target": "fund_card",
+      "type": "ui_sync",
+      "description": "suspect状态显示'—'而非0",
+      "label": "数据质量影响卡片展示"
+    },
+    {
+      "source": "data_quality",
+      "target": "fund_modal",
+      "type": "ui_sync",
+      "description": "弹窗显示数据质量状态",
+      "label": "数据质量影响弹窗展示"
+    },
+    {
+      "source": "data_quality",
+      "target": "rank_calc",
+      "type": "affects",
+      "description": "榜单计算时suspect基金d1为None",
+      "label": "数据质量影响榜单计算"
+    },
+    {
+      "source": "data_source",
+      "target": "data_quality",
+      "type": "dependency",
+      "description": "多源交叉验证依赖三数据源",
+      "label": "data_source → data_quality"
+    },
+    {
+      "source": "change_gateway",
+      "target": "nav_fetch",
+      "type": "constrains",
+      "description": "变更准入后影响数据采集",
+      "label": "change_gateway → nav_fetch"
+    },
+    {
+      "source": "change_gateway",
+      "target": "metrics_calc",
+      "type": "constrains",
+      "description": "变更准入后影响指标计算",
+      "label": "change_gateway → metrics_calc"
+    },
+    {
+      "source": "change_gateway",
+      "target": "fund_card",
+      "type": "constrains",
+      "description": "变更准入后影响基金卡片",
+      "label": "change_gateway → fund_card"
+    },
+    {
+      "source": "change_gateway",
+      "target": "rank_calc",
+      "type": "constrains",
+      "description": "变更准入后影响榜单计算",
+      "label": "change_gateway → rank_calc"
+    },
+    {
+      "source": "change_gateway",
+      "target": "one_click_update",
+      "type": "constrains",
+      "description": "变更准入后影响一键更新",
+      "label": "change_gateway → one_click_update"
+    },
+    {
+      "source": "ui_design",
+      "target": "rank_page",
+      "type": "constrains",
+      "label": "设计规范约束"
+    },
+    {
+      "source": "ui_design",
+      "target": "watch_page",
+      "type": "constrains",
+      "label": "设计规范约束"
+    },
+    {
+      "source": "ui_design",
+      "target": "compare_page",
+      "type": "constrains",
+      "label": "设计规范约束"
+    },
+    {
+      "source": "ui_design",
+      "target": "portfolio_page",
+      "type": "constrains",
+      "label": "设计规范约束"
+    },
+    {
+      "source": "ui_design",
+      "target": "market_page",
+      "type": "constrains",
+      "label": "设计规范约束"
+    },
+    {
+      "source": "ui_design",
+      "target": "mine_page",
+      "type": "constrains",
+      "label": "设计规范约束"
+    },
+    {
+      "source": "ui_design",
+      "target": "fund_card",
+      "type": "constrains",
+      "label": "设计规范约束"
+    },
+    {
+      "source": "ui_design",
+      "target": "fund_modal",
+      "type": "constrains",
+      "label": "设计规范约束"
+    },
+    {
+      "source": "ui_design",
+      "target": "settings",
+      "type": "constrains",
+      "label": "设计规范约束"
+    },
+    {
+      "source": "change_gateway",
+      "target": "version_mgmt",
+      "label": "变更完成后必须升级版本号并构建部署（七类必做项之一）"
+    },
+    {
+      "source": "version_mgmt",
+      "target": "change_gateway",
+      "label": "版本升级和构建部署完成后回写变更记录状态为completed"
+    },
+    {
+      "source": "portfolio_page",
+      "target": "alert_center",
+      "label": "止盈提醒数据同步",
+      "description": "持仓页面设置止盈目标时同步创建提醒中心的止盈规则"
+    },
+    {
+      "source": "global_ui",
+      "target": "portfolio_page",
+      "label": "全局UI适配",
+      "description": "全局UI适配（灵动岛、安全区域）影响所有页面"
+    },
+    {
+      "source": "global_ui",
+      "target": "market_page",
+      "label": "全局UI适配",
+      "description": "全局UI适配（灵动岛、安全区域）影响所有页面"
+    },
+    {
+      "source": "global_ui",
+      "target": "fund_page",
+      "label": "全局UI适配",
+      "description": "全局UI适配（灵动岛、安全区域）影响所有页面"
+    },
+    {
+      "source": "global_ui",
+      "target": "mine_page",
+      "label": "全局UI适配",
+      "description": "全局UI适配（灵动岛、安全区域）影响所有页面"
+    },
+    {
+      "source": "global_ui",
+      "target": "compare_page",
+      "label": "全局UI适配",
+      "description": "全局UI适配（灵动岛、安全区域）影响所有页面"
+    },
+    {
+      "source": "global_ui",
+      "target": "function_graph_page",
+      "label": "全局UI适配",
+      "description": "全局UI适配（灵动岛、安全区域、特殊字符）影响神经网络页面"
+    },
+    {
+      "source": "global_ui",
+      "target": "ui_quality_check",
+      "label": "包含",
+      "description": "全局UI适配包含UI质量检查子节点"
+    },
+    {
+      "source": "ui_quality_check",
+      "target": "ui_issues_tracker",
+      "label": "检测结果",
+      "description": "UI质量检查的检测结果记录到UI问题跟踪节点"
+    },
+    {
+      "source": "ui_issues_tracker",
+      "target": "portfolio_page",
+      "label": "影响",
+      "description": "UI设计问题影响持仓页面"
+    },
+    {
+      "source": "ui_issues_tracker",
+      "target": "market_page",
+      "label": "影响",
+      "description": "UI设计问题影响市场页面"
+    },
+    {
+      "source": "ui_issues_tracker",
+      "target": "compare_page",
+      "label": "影响",
+      "description": "UI设计问题影响对比页面"
+    },
+    {
+      "source": "ui_issues_tracker",
+      "target": "mine_page",
+      "label": "影响",
+      "description": "UI设计问题影响我的页面"
+    },
+    {
+      "source": "ui_issues_tracker",
+      "target": "function_graph_page",
+      "label": "影响",
+      "description": "UI设计问题影响神经网络页面"
+    },
+    {
+      "source": "change_gateway",
+      "target": "ui_quality_check",
+      "label": "UI变更检测",
+      "description": "变更准入网关中UI变更必须经过UI质量检测"
+    },
+    {
+      "source": "change_gateway",
+      "target": "systematic-debugging",
+      "type": "affects",
+      "label": "调试流程触发"
+    },
+    {
+      "source": "change_gateway",
+      "target": "using-git-worktrees",
+      "type": "affects",
+      "label": "隔离工作区触发"
+    },
+    {
+      "source": "systematic-debugging",
+      "target": "ui_quality_check",
+      "type": "test_related",
+      "label": "调试后UI验证"
+    },
+    {
+      "source": "using-git-worktrees",
+      "target": "change_gateway",
+      "type": "affects",
+      "label": "隔离完成返回网关"
+    },
+    {
+      "source": "ui_quality_check",
+      "target": "change_gateway",
+      "type": "doc_sync",
+      "label": "设计命令指导变更"
+    },
+    {
+      "source": "rank_calc",
+      "target": "rank_api",
+      "type": "data_flow",
+      "label": "榜单计算结果通过API返回",
+      "description": "rank_calc计算的榜单数据存储到rank_snapshots表，rank_api读取并返回"
+    },
+    {
+      "source": "rank_api",
+      "target": "score_calc",
+      "type": "dependency",
+      "label": "榜单分数依赖compute_scores_v2",
+      "description": "v2.9.51起榜单API直接使用rank_snapshots.meta中的compute_scores_v2分数，不再用scoring_v3覆盖"
+    },
+    {
+      "source": "detail_api",
+      "target": "score_calc",
+      "type": "dependency",
+      "label": "详情分数依赖compute_scores_v2",
+      "description": "详情API从funds表读取compute_scores_v2分数，与榜单API一致"
+    },
+    {
+      "source": "rank_api",
+      "target": "fund_card",
+      "type": "data_flow",
+      "label": "榜单API数据驱动基金卡片",
+      "description": "基金卡片从榜单API获取数据并展示"
+    },
+    {
+      "source": "detail_api",
+      "target": "fund_modal",
+      "type": "data_flow",
+      "label": "详情API数据驱动基金弹窗",
+      "description": "基金弹窗从详情API获取数据并展示"
+    },
+    {
+      "source": "one_click_update",
+      "target": "score_calc",
+      "type": "call",
+      "label": "一键更新调用分数计算",
+      "description": "一键更新阶段4对上榜+自选基金批量调用compute_scores_v2计算分数"
+    },
+    {
+      "source": "gateway_analyzer_init",
+      "target": "gateway_analyzer_load_graph",
+      "type": "calls",
+      "label": "调用"
+    },
+    {
+      "source": "gateway_analyzer_init",
+      "target": "gateway_analyzer_build_adjacency",
+      "type": "calls",
+      "label": "调用"
+    },
+    {
+      "source": "gateway_analyzer_analyze",
+      "target": "gateway_analyzer_bfs",
+      "type": "calls",
+      "label": "调用"
+    },
+    {
+      "source": "gateway_analyzer_analyze",
+      "target": "gateway_analyzer_compute_stats",
+      "type": "calls",
+      "label": "调用"
+    },
+    {
+      "source": "gateway_analyzer_analyze",
+      "target": "gateway_analyzer_identify_risks",
+      "type": "calls",
+      "label": "调用"
+    },
+    {
+      "source": "gateway_analyzer_analyze",
+      "target": "gateway_analyzer_generate_checklist",
+      "type": "calls",
+      "label": "调用"
+    }
+  ],
+  "version": "2.9.37",
+  "last_updated": "2026-09-07"
+}

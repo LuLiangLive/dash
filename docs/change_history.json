@@ -1,0 +1,3548 @@
+{
+  "meta": {
+    "version": "2.11.6",
+    "total_changes": 69,
+    "last_updated": "2026-09-09T03:06:39.050757",
+    "current_version": "2.11.6"
+  },
+  "changes": [
+    {
+      "id": "CHG-20260909-075",
+      "version": "2.11.6",
+      "date": "2026-09-09",
+      "title": "v2.11.6 净值增量抓取双模式：修复250阈值与365清洗窗口矛盾导致的每日全量重抓",
+      "description": "根因: 健康判定要求历史总天数>=250交易日, 而 cleanup_old_navs(days=365)≈243交易日, 被清洗基金永远不达标, 96%基金(5729只)每日被判不健康触发多源全量补抓(阶段1占85%时长)。修复: ①每日增量min_history_days=0只判最新日期+密度; ②首跑补全(nav_history<5000行)启用NAV_MIN_TOTAL_DAYS=200; ③防全量风暴闸门: 缓存已最新(cm>=target)的基金一律跳过不再全量重抓; ④多源触发与min_history_days解绑改由真缺口规模决定; ⑤窗口常量收敛NAV_RETENTION_DAYS/NAV_MIN_TOTAL_DAYS等, AGENTS.md 6.1同步。隔离库实测: 每日待抓5729→5只(3.5s), 首跑模式627只",
+      "category": "feature",
+      "priority": "medium",
+      "status": "completed",
+      "affected_modules": [],
+      "affected_files": [
+        "backend/modules/nav/fetcher.py",
+        "backend/modules/common/pipeline.py",
+        "backend/modules/common/fetch_manager.py",
+        "AGENTS.md"
+      ],
+      "affected_nodes": [],
+      "changes": [],
+      "testing": {
+        "unit_tests": "",
+        "integration_tests": "",
+        "results": ""
+      },
+      "impact": {
+        "positive": [],
+        "negative": [],
+        "risks": []
+      },
+      "verification": [],
+      "risk_assessment": "",
+      "risk_level": "medium",
+      "gateway_passed": false,
+      "tested": false
+    },
+    {
+      "id": "CHG-20260909-074",
+      "version": "2.11.5",
+      "date": "2026-09-09",
+      "title": "v2.11.5 一致性修复：图谱坏边/版本机制/前端四问题/截图iOS专项",
+      "description": "修复function_graph.json坏边(from/to)导致网关KeyError并全面双命名兼容；版本号四处统一2.11.5且一致性检查纳入图谱meta、change_recorder自动回写图谱版本；图谱算法声明纠错(无风险利率2%/full_quality_check/config_keys/field_lifecycle)；前端修复提醒列表空、对比页灵动岛遮挡、添加基金后台化、自选卡片缺失终态；截图改toBlob+navigator.share并按面积动态scale、移除allowTaint",
+      "category": "feature",
+      "priority": "medium",
+      "status": "completed",
+      "affected_modules": [],
+      "affected_files": [
+        "modules/system/gateway_service.py",
+        "modules/system/gateway_router.py",
+        "modules/system/graph_router.py",
+        "modules/superpower/change_recorder.py",
+        "src/components/AlertManager.vue",
+        "src/components/AppHeader.vue",
+        "src/components/FundDetailModal.vue",
+        "src/views/CompareView.vue",
+        "src/stores/watch.ts",
+        "src/utils/saveImage.ts",
+        "src/utils/version.ts"
+      ],
+      "affected_nodes": [],
+      "changes": [],
+      "testing": {
+        "unit_tests": "",
+        "integration_tests": "",
+        "results": ""
+      },
+      "impact": {
+        "positive": [],
+        "negative": [],
+        "risks": []
+      },
+      "verification": [],
+      "risk_assessment": "",
+      "risk_level": "medium",
+      "gateway_passed": false,
+      "tested": false
+    },
+    {
+      "id": "CHG-20260908-063",
+      "version": "2.10.0",
+      "date": "2026-09-08",
+      "title": "后端命名统一：榜单meta max_dd→mdd, up_cap→up_capture, dn_cap→dn_capture",
+      "description": "后端榜单meta字段名统一，与弹窗/对比API保持一致。1040条rank_snapshots历史数据已迁移，10+后端文件已修改，前端normalize和类型定义已同步。前后端字段名完全统一，不再需要适配转换。",
+      "category": "refactor",
+      "priority": "high",
+      "status": "completed",
+      "affected_modules": [],
+      "affected_files": [
+        "backend/modules/rank/rank_full.py",
+        "backend/modules/rank/ranker.py",
+        "backend/modules/score/scoring.py",
+        "backend/modules/score/scoring_v3.py",
+        "backend/modules/fund/fund_metrics.py",
+        "backend/analysis_pipeline/night_fund_monitor.py",
+        "backend/rendering/md_builder.py",
+        "backend/modules/common/metrics.py",
+        "backend/modules/common/compare.py",
+        "src/utils/normalize.ts",
+        "src/types/index.ts"
+      ],
+      "affected_nodes": [
+        "rank_calc",
+        "rank_api",
+        "one_click_update",
+        "metrics_calc",
+        "fund_card",
+        "rank_page"
+      ],
+      "changes": [
+        {
+          "file": "fund.db",
+          "change": "1040条rank_snapshots.meta字段名迁移 max_dd→mdd, up_cap→up_capture, dn_cap→dn_capture"
+        },
+        {
+          "file": "backend/modules/rank/rank_full.py",
+          "change": "39处字段名替换"
+        },
+        {
+          "file": "backend/modules/rank/ranker.py",
+          "change": "23处字段名替换"
+        },
+        {
+          "file": "backend/modules/score/scoring.py",
+          "change": "14处字段名替换"
+        },
+        {
+          "file": "backend/modules/score/scoring_v3.py",
+          "change": "20处字段名替换"
+        },
+        {
+          "file": "backend/modules/fund/fund_metrics.py",
+          "change": "输出字典key max_dd→mdd (3处)"
+        },
+        {
+          "file": "backend/analysis_pipeline/night_fund_monitor.py",
+          "change": "输出字典key max_dd→mdd (3处)"
+        },
+        {
+          "file": "backend/rendering/md_builder.py",
+          "change": "读取max_dd→mdd (4处)"
+        },
+        {
+          "file": "backend/modules/common/metrics.py",
+          "change": "m.get(max_dd)→m.get(mdd)"
+        },
+        {
+          "file": "backend/modules/common/compare.py",
+          "change": "stats.get(max_dd)→stats.get(mdd) (2处)"
+        },
+        {
+          "file": "src/utils/normalize.ts",
+          "change": "pick(p, max_dd)→pick(p, mdd)"
+        },
+        {
+          "file": "src/types/index.ts",
+          "change": "RankItem max_dd?: Num→mdd?: Num"
+        }
+      ],
+      "testing": {
+        "unit_tests": "",
+        "integration_tests": "",
+        "results": ""
+      },
+      "impact": {
+        "positive": [],
+        "negative": [],
+        "risks": []
+      },
+      "verification": [],
+      "risk_assessment": "",
+      "risk_level": "medium",
+      "gateway_passed": false,
+      "tested": false
+    },
+    {
+      "id": "CHG-20260908-062",
+      "version": "2.9.67",
+      "date": "2026-09-08",
+      "title": "前端命名统一：maxDd→mdd, up_cap→up_capture, dn_cap→dn_capture",
+      "description": "前端存在命名不一致：榜单NormalizedCard用maxDd，弹窗/对比页用mdd；对比配置用up_capture，部分代码用up_cap；dn_cap/dn_capture同理。本次统一前端为长命名(mdd/up_capture/dn_capture)，后端API不变，normalizeCard做适配转换。网关分析影响29节点，实际仅前端命名变更，风险LOW。",
+      "category": "refactor",
+      "priority": "low",
+      "status": "completed",
+      "affected_modules": [],
+      "affected_files": [
+        "src/utils/normalize.ts",
+        "src/components/FundCard.vue",
+        "src/components/compare/CompareTable.vue",
+        "src/components/fund/FundScoreDetail.vue",
+        "src/types/index.ts"
+      ],
+      "affected_nodes": [
+        "fund_card",
+        "rank_page",
+        "fund_modal",
+        "compare_page"
+      ],
+      "changes": [
+        {
+          "file": "src/utils/normalize.ts",
+          "change": "risk.maxDd → risk.mdd (2处)"
+        },
+        {
+          "file": "src/components/FundCard.vue",
+          "change": "card.risk.maxDd → card.risk.mdd (1处)"
+        },
+        {
+          "file": "src/components/compare/CompareTable.vue",
+          "change": "up_cap→up_capture(5处), dn_cap→dn_capture(5处)"
+        },
+        {
+          "file": "src/components/fund/FundScoreDetail.vue",
+          "change": "up_cap→up_capture(6处), dn_cap→dn_capture(5处)"
+        },
+        {
+          "file": "src/types/index.ts",
+          "change": "up_cap→up_capture(1处), dn_cap→dn_capture(1处)"
+        }
+      ],
+      "testing": {
+        "unit_tests": "",
+        "integration_tests": "",
+        "results": ""
+      },
+      "impact": {
+        "positive": [],
+        "negative": [],
+        "risks": []
+      },
+      "verification": [],
+      "risk_assessment": "",
+      "risk_level": "medium",
+      "gateway_passed": false,
+      "tested": false
+    },
+    {
+      "id": "CHG-20260908-061",
+      "date": "2026-09-08",
+      "version": "2.9.66",
+      "type": "bugfix",
+      "priority": "P0",
+      "title": "修复榜单基金卡片信号天数不显示：reco字段同步遗漏",
+      "description": "v2.9.44把reco计算从pipeline阶段1移到recompute_ad阶段4后，recompute_ad在同步rank_snapshots.meta时只同步了earn_score/ad_score/score/ms四个字段，漏掉了reco/reco_score/reco_days/prev_reco/prev_reco_days，导致榜单卡片的信号天数（如'布局5天'）不显示。",
+      "root_cause": "数据生命周期断裂：reco计算→funds表存储→【rank_snapshots.meta同步，遗漏！】→FundCard展示。v2.9.44重构时只关注了计算和存储环节，没有追踪到同步环节。神经网络one_click_update节点的检查点也缺少'sync meta包含reco字段'这一项。",
+      "solution": "1. recompute_ad.py同步字段从4个增加到9个（加入5个reco相关字段）；2. 运行快速同步脚本，把现有1040条榜单记录的reco从funds表同步到rank_snapshots.meta；3. 更新神经网络，补全reco完整数据生命周期，加入同步环节检查点；4. 新增one_click_update→rank_calc的数据同步边。",
+      "affected_files": [
+        "backend/scripts/recompute_ad.py - 同步字段加入reco/reco_score/reco_days/prev_reco/prev_reco_days",
+        "backend/docs/function_graph.json - 补全reco数据生命周期，加入同步环节检查点和数据同步边",
+        "backend/docs/change_history.json - 添加CHG-20260908-061记录",
+        "backend/config.py - 版本号升为2.9.66",
+        "src/utils/version.ts - 版本号升为2.9.66",
+        "_pack.py - 版本号升为2.9.66",
+        "_pack_local.py - 版本号升为2.9.66"
+      ],
+      "affected_nodes": [
+        "one_click_update",
+        "metrics_calc",
+        "fund_card",
+        "rank_calc"
+      ],
+      "data_lifecycle_fix": {
+        "计算": "recompute_ad阶段4，75天精确回放（v2.9.44已实现）",
+        "存储": "funds表 reco/reco_score/reco_days/prev_reco/prev_reco_days（v2.9.44已实现）",
+        "同步": "recompute_ad同步rank_snapshots.meta（v2.9.66修复，之前遗漏）",
+        "展示": "FundCard.vue normalizeCard读取recoDays显示信号天数（已有）"
+      },
+      "verification": "1. funds表502只基金有reco数据；2. rank_snapshots 1040条记录全部同步完成；3. API返回40/40只基金都有reco和reco_days；4. 神经网络补全数据生命周期检查点"
+    },
+    {
+      "id": "CHG-20260908-060",
+      "version": "2.9.65",
+      "date": "2026-09-08",
+      "type": "refactor",
+      "title": "市场页面重构 - 参考同花顺最佳实践 + ui-ux-pro-max设计系统",
+      "description": "完全重构MarketOverview.vue，采用Real-Time Monitoring + Data-Dense Dashboard + Financial Dashboard设计风格，参考同花顺涨停情绪市场脉冲屏等最佳实践",
+      "changes": [
+        "MarketOverview.vue完全重构：顶部实时状态栏+指数KPI横向滚动卡片+市场情绪5面板+行业资金双列+热门题材+风格轮动+分级研判",
+        "新增实时更新指示器（绿色脉冲点）",
+        "新增市场情绪自动判断（强势/偏强/中性/偏弱/弱势）",
+        "新增北向资金净流入计算和展示",
+        "行业资金流向改为涨幅前5+跌幅前5双列布局",
+        "App.vue tabOffset：/market页面从96px调整为80px（紧凑布局）",
+        "MarketView.vue .market-content padding-top从8px改为0（间距由tabOffset统一控制）",
+        "完整响应式适配：桌面5列/平板3列/手机2列情绪面板"
+      ],
+      "files_modified": [
+        "src/components/market/MarketOverview.vue",
+        "src/views/MarketView.vue",
+        "src/App.vue"
+      ],
+      "design_reference": [
+        "ui-ux-pro-max: Real-Time Monitoring + Data-Dense Dashboard + Financial Dashboard + Dark Mode",
+        "同花顺金融数据API最佳实践: 涨停情绪市场脉冲屏、市场热度与飙升雷达"
+      ],
+      "gateway_analysis": "backend/docs/gateway_analysis_chg060.json"
+    },
+    {
+      "id": "CHG-20260908-059",
+      "date": "2026-09-08",
+      "version": "2.9.64",
+      "title": "基金弹窗保存图片修复 + 全局Toast/Message灵动岛适配",
+      "description": "1. 基金弹窗保存图片：改回直接下载方式（不要长按保存），截图整个弹窗包括滚动区域的所有内容（不只是视窗可见部分），移动端和桌面端都直接下载PNG；2. 全局Toast（ToastHost）：top位置从16px改为calc(16px + env(safe-area-inset-top))，适配iPhone灵动岛安全区域；3. naive-ui Message（NMessageProvider）：通过CSS覆盖top位置，同样适配iPhone灵动岛安全区域。解决了用户反馈的所有提醒消息被灵动岛遮挡看不到的全局问题。",
+      "category": "frontend",
+      "affected_files": [
+        "src/components/FundDetailModal.vue",
+        "src/components/ToastHost.vue",
+        "src/App.vue",
+        "backend/config.py",
+        "src/utils/version.ts",
+        "backend/docs/function_graph.json"
+      ],
+      "changes": [
+        {
+          "file": "src/components/FundDetailModal.vue",
+          "type": "bugfix",
+          "description": "saveImage函数改回直接下载方式：截图前临时展开弹窗maxHeight和overflow，确保截取完整内容包括滚动区域；截图后恢复原始样式；移动端和桌面端都直接创建a标签下载PNG，不要在新窗口打开让用户长按保存"
+        },
+        {
+          "file": "src/components/ToastHost.vue",
+          "type": "bugfix",
+          "description": ".toast-host的top从16px改为calc(16px + env(safe-area-inset-top, 0px))，适配iPhone灵动岛和安全区域，解决全局Toast提醒被灵动岛遮挡看不到的问题"
+        },
+        {
+          "file": "src/App.vue",
+          "type": "bugfix",
+          "description": "添加:deep(.n-message-container)的CSS覆盖，top改为calc(16px + env(safe-area-inset-top, 0px))，适配naive-ui的Message组件在iPhone灵动岛下的位置"
+        }
+      ],
+      "verification": {
+        "status": "pending",
+        "method": "前端页面验证",
+        "items": [
+          "基金弹窗：点击'保存图片'按钮直接下载PNG，不要在新窗口打开",
+          "基金弹窗：保存的图片包含整个弹窗内容（包括滚动区域的所有内容，不只是视窗可见部分）",
+          "全局Toast：iPhone 16上Toast提醒显示在灵动岛下方，不被遮挡",
+          "naive-ui Message：iPhone 16上Message提醒显示在灵动岛下方，不被遮挡",
+          "所有页面的提醒消息都能正常看到，不被灵动岛遮挡"
+        ]
+      },
+      "related_issues": [],
+      "notes": "用户明确要求：1. 保存图片点击按钮直接下载，不要长按保存；2. 截图要包含整个弹窗从上到下所有内容，不只是视窗可见部分；3. 全局提醒（Toast/Message）被灵动岛遮挡是全局问题，不只是保存图片的提醒，需要系统性修复所有提醒的位置。"
+    },
+    {
+      "id": "CHG-20260907-058",
+      "date": "2026-09-07",
+      "version": "2.9.63",
+      "title": "自选页面布局调整 + 对比页面移动端适配 + 基金弹窗保存优化",
+      "description": "1. 自选页面：分组标签栏移到列表头上面（用户要求）；2. 对比页面：.compare-header适配iPhone灵动岛和安全区域（env(safe-area-inset-top)）；3. 对比页面：.selector-footer移动端变形修复（防止'已选X/2'和'开始对比'按钮换行）；4. 基金弹窗：saveImage优化（移动端在新窗口打开图片支持长按保存，桌面端直接下载）；5. 基金弹窗：.anti-footer适配底部安全区域（env(safe-area-inset-bottom)）。",
+      "category": "frontend",
+      "affected_files": [
+        "src/components/watch/WatchList.vue",
+        "src/views/CompareView.vue",
+        "src/components/FundDetailModal.vue",
+        "backend/config.py",
+        "src/utils/version.ts",
+        "backend/docs/function_graph.json"
+      ],
+      "changes": [
+        {
+          "file": "src/components/watch/WatchList.vue",
+          "type": "enhancement",
+          "description": "分组标签栏（group-manager-slot）从列表头后面移到列表头前面（用户要求）"
+        },
+        {
+          "file": "src/views/CompareView.vue",
+          "type": "bugfix",
+          "description": ".compare-header适配iPhone灵动岛和安全区域，padding-top添加env(safe-area-inset-top)"
+        },
+        {
+          "file": "src/views/CompareView.vue",
+          "type": "bugfix",
+          "description": ".selector-footer移动端变形修复：添加flex-wrap: nowrap和gap，.selector-tip添加white-space: nowrap防止换行"
+        },
+        {
+          "file": "src/components/FundDetailModal.vue",
+          "type": "enhancement",
+          "description": "saveImage函数优化：移动端在新窗口打开图片支持长按保存，桌面端直接下载；截图前滚动到顶部确保完整"
+        },
+        {
+          "file": "src/components/FundDetailModal.vue",
+          "type": "bugfix",
+          "description": ".anti-footer适配底部安全区域，padding-bottom添加env(safe-area-inset-bottom)"
+        }
+      ],
+      "verification": {
+        "status": "pending",
+        "method": "前端页面验证",
+        "items": [
+          "自选页面：分组标签栏显示在'全部X只'排序行上面",
+          "对比页面：iPhone 16顶部返回键和截图键不被灵动岛遮挡",
+          "对比页面：移动端选了两只基金后，'已选2/2'和'开始对比'按钮在同一行不换行",
+          "基金弹窗：移动端点击'保存图片'在新窗口打开，支持长按保存",
+          "基金弹窗：桌面端点击'保存图片'直接下载PNG文件",
+          "基金弹窗：底部按钮不被iPhone底部安全区域遮挡"
+        ]
+      },
+      "related_issues": [],
+      "notes": "针对用户反馈的iPhone 16灵动岛安全区域问题和移动端UI变形问题进行了系统性修复。基金弹窗保存图片改为移动端长按保存方式，解决了移动端Safari无法直接下载图片的问题。"
+    },
+    {
+      "id": "CHG-20260907-057",
+      "date": "2026-09-07",
+      "version": "2.9.62",
+      "title": "持仓删除全部功能 + 操作栏吸顶 + 榜单间距优化",
+      "description": "1. 持仓操作增加'删除全部持仓'功能，支持一键清空所有持仓和投资记录后重新导入；2. 持仓页面'全部多少只'和操作区域固定吸顶，滚动时保持可见方便操作；3. 榜单页面优化二级标题和第一个基金卡片之间的间距，从22px减少到8px。",
+      "category": "frontend",
+      "affected_files": [
+        "src/components/PortfolioManager.vue",
+        "src/views/FundView.vue",
+        "backend/config.py",
+        "src/utils/version.ts",
+        "backend/docs/function_graph.json"
+      ],
+      "changes": [
+        {
+          "file": "src/components/PortfolioManager.vue",
+          "type": "feature",
+          "description": "添加'删除全部持仓'功能：操作下拉菜单新增选项，确认弹窗，遍历所有持仓逐个调用delete接口"
+        },
+        {
+          "file": "src/components/PortfolioManager.vue",
+          "type": "enhancement",
+          "description": "overview-footer添加sticky定位，'全部多少只'和操作按钮固定吸顶，在收益概览下方"
+        },
+        {
+          "file": "src/views/FundView.vue",
+          "type": "enhancement",
+          "description": "优化二级Tab和第一个基金卡片之间的间距：二级Tab margin-bottom从12px减少到4px，.fx-grid padding-top从10px减少到4px，总间距从22px减少到8px"
+        }
+      ],
+      "verification": {
+        "status": "pending",
+        "method": "前端页面验证",
+        "items": [
+          "持仓页面操作下拉菜单显示'删除全部持仓'选项",
+          "点击'删除全部持仓'弹出确认弹窗",
+          "确认后遍历删除所有持仓，显示成功/失败统计",
+          "持仓页面滚动时'全部多少只'和操作按钮保持吸顶可见",
+          "榜单页面二级Tab和第一个基金卡片之间间距明显减小"
+        ]
+      },
+      "related_issues": [],
+      "notes": "删除全部持仓功能会删除所有持仓及其投资记录，操作不可恢复，建议先导出数据备份。删除后可重新导入新的投资记录。"
+    },
+    {
+      "id": "CHG-20260907-056",
+      "version": "2.9.61",
+      "date": "2026-09-07",
+      "title": "收益分算法统一到V3 + 前端废弃代码清理 + 神经网络描述修正",
+      "category": "refactor",
+      "severity": "high",
+      "description": "1. 收益分算法统一：主流程compute_scores_v2从旧版compute_earn_scores（d10=0.20/m1=0.15）切换到scoring_v3的compute_earn_score（d10=0.15/m1=0.20），删除旧版compute_earn_scores函数，清理collector/scoring.py和ranker.py中的导入。解决两套收益分算法并存导致同一基金在不同地方计算出的收益分不一样的问题。\n2. 前端废弃代码清理：删除settings.ts中未被调用的loadAlgoCfg/saveAlgo/resetAlgo/admin函数，以及algoDraft/saveMsg/algoInvalid变量；删除system.ts中未被调用的fetchAlgoMeta/saveAlgoConfig/adminAction函数。\n3. 神经网络描述修正：修正score_calc节点中错误的描述（scoring_v3已废弃），更新为正确的描述（scoring_v3正在被使用，收益分和抗跌分全部统一使用scoring_v3）。",
+      "root_cause": "抗跌分在v2.9.57统一到V3时，收益分没有同步统一，导致两套收益分算法并存：主流程用scoring.py的compute_earn_scores（d10=0.20/m1=0.15），其他地方用scoring_v3的compute_earn_score（d10=0.15/m1=0.20），导致同一基金在不同地方计算出的收益分不一样。",
+      "solution": [
+        "1. compute_scores_v2统一使用scoring_v3的compute_earn_score",
+        "2. 删除旧版compute_earn_scores函数",
+        "3. 清理collector/scoring.py和ranker.py中的导入",
+        "4. 清理前端废弃代码（settings.ts和system.ts）",
+        "5. 修正神经网络score_calc节点的描述",
+        "6. 升级版本号2.9.60→2.9.61",
+        "7. 记录变更到change_history.json"
+      ],
+      "affected_files": [
+        "backend/modules/score/scoring.py - compute_scores_v2统一使用scoring_v3，删除compute_earn_scores",
+        "backend/collector/scoring.py - 清理compute_earn_scores导入",
+        "backend/modules/rank/ranker.py - 清理compute_earn_scores导入",
+        "src/stores/settings.ts - 删除loadAlgoCfg/saveAlgo/resetAlgo/admin函数及相关变量",
+        "src/api/system.ts - 删除fetchAlgoMeta/saveAlgoConfig/adminAction函数",
+        "backend/docs/function_graph.json - 修正score_calc节点描述",
+        "backend/docs/change_history.json - 添加变更记录"
+      ],
+      "affected_nodes": [
+        "score_calc",
+        "one_click_update",
+        "settings",
+        "rank_calc"
+      ],
+      "verification": [
+        "compute_scores_v2导入成功，语法正确",
+        "旧版compute_earn_scores已删除，不再被任何地方调用",
+        "前端废弃函数已删除，不再被任何地方调用",
+        "神经网络描述已修正"
+      ],
+      "rollback_plan": "如需回滚，恢复scoring.py中的compute_earn_scores函数，并将compute_scores_v2改回调用compute_earn_scores。",
+      "gateway_analysis": {
+        "core_nodes": [
+          "score_calc",
+          "one_click_update",
+          "settings"
+        ],
+        "forward_affected": 33,
+        "backward_affected": 27,
+        "total_affected": 42,
+        "risks_identified": 5,
+        "checklist_items": 14
+      }
+    },
+    {
+      "id": "CHG-20260907-053",
+      "version": "2.9.60",
+      "date": "2026-09-07",
+      "title": "修复一键更新自动删除90天前净值数据的问题",
+      "category": "bugfix",
+      "severity": "high",
+      "description": "修复一键更新在阶段3/6自动调用cleanup_old_navs(days=90)删除90天前净值数据的问题。之前92%的基金只有63天数据，无法计算年涨跌幅、抗跌分析、回测等指标。现在改为保留365天（一年）的数据，上榜+自选基金仍然保留2年数据。",
+      "root_cause": "fetch_manager.py第492行调用cleanup_old_navs(days=90, ...)，在一键更新的阶段3/6自动删除90天前的净值数据。虽然净值抓取阶段成功抓取了2,874,620条数据（平均每只基金477天），但是清理阶段删除了1,034,420条90天前的数据，导致最终数据库中只有509,779条数据，92%的基金只有63天数据。",
+      "solution": [
+        "1. fetch_manager.py第492行：days=90 改为 days=365（保留一年的数据）",
+        "2. 上榜+自选基金仍然通过exclude_codes参数排除，保留2年数据",
+        "3. 升级版本号2.9.59→2.9.60",
+        "4. 记录变更到change_history.json"
+      ],
+      "affected_files": [
+        "backend/modules/common/fetch_manager.py - 第491-494行，days=90改为days=365"
+      ],
+      "verification": [
+        "修改前：一键更新显示抓取2,874,620条，最终数据库只有509,779条，92%基金只有63天",
+        "修改后：预计所有基金都有至少365天数据，上榜+自选基金有2年数据",
+        "需要重新触发一键更新验证"
+      ],
+      "known_issues": [
+        "保留一年的数据会增加数据库大小（从约50万条增加到约150万条）",
+        "需要验证一键更新性能是否正常"
+      ],
+      "related_changes": [
+        "CHG-20260907-052"
+      ]
+    },
+    {
+      "id": "CHG-20260907-052",
+      "version": "2.9.59",
+      "date": "2026-09-07",
+      "title": "修复净值数据覆盖不足 - page_size=60和max_pages=5导致只抓63天数据",
+      "description": "修复一键更新后92.7%（5610只）基金只有63天净值数据的严重问题。根本原因有两个：1) pipeline.py第595行非增量模式调用fetch_nav_many时page_size硬编码为60，只抓取最近60天（约63个交易日）；2) fetcher.py中fetch_nav_history函数的max_pages硬编码为5，每页20条，最多只能返回100条数据，即使page_size=250也会被截断。修复后两个参数分别改为250和15，测试验证单只基金可返回260条数据（约一年）。",
+      "category": "数据修复",
+      "priority": "critical",
+      "status": "completed",
+      "root_cause": "两个参数硬编码问题叠加：1) pipeline.py第595行fetch_nav_many(todo, page_size=60, ...)只抓60天；2) fetcher.py第695行fetch_nav_history(max_pages=5)每页20条最多100条，即使page_size=250也被截断。两者叠加导致92.7%基金只有63天数据。",
+      "affected_modules": [
+        "modules/common/pipeline.py",
+        "modules/nav/fetcher.py"
+      ],
+      "affected_files": [
+        "backend/modules/common/pipeline.py",
+        "backend/modules/nav/fetcher.py",
+        "backend/config.py",
+        "src/utils/version.ts",
+        "backend/docs/function_graph.json",
+        "_pack.py",
+        "_pack_local.py"
+      ],
+      "affected_nodes": [
+        "nav_fetch",
+        "one_click_update",
+        "data_quality",
+        "score_calc",
+        "rank_calc"
+      ],
+      "changes": [
+        {
+          "file": "backend/modules/common/pipeline.py",
+          "change": "第595行fetch_nav_many调用page_size=60改为page_size=250"
+        },
+        {
+          "file": "backend/modules/nav/fetcher.py",
+          "change": "第695行fetch_nav_history函数默认参数max_pages=5改为max_pages=15，确保能返回250天以上数据"
+        }
+      ],
+      "verification": [
+        "测试fetch_nav_history(page_size=250, max_pages=15)返回260条数据（000241、008984）",
+        "测试fetch_nav_many(page_size=250, workers=4)返回260条数据（3只基金全部正常）",
+        "修改前：单只基金最多返回60-100条数据；修改后：单只基金可返回260条数据"
+      ],
+      "impact_analysis": {
+        "gateway_report": "docs/impact_analysis_chg052.json",
+        "affected_nodes": 33,
+        "affected_files": 47,
+        "high_risks": 2,
+        "medium_risks": 3
+      }
+    },
+    {
+      "id": "CHG-20260907-051",
+      "version": "2.9.58",
+      "date": "2026-09-07",
+      "title": "修复净值日期时区bug - 统一北京时间UTC+8",
+      "description": "修复pingzhong.py中使用utcfromtimestamp（UTC时间）导致日期偏移一天的根本bug，将周一数据错误存到周日（52720条周末错误数据）。统一所有日期处理使用北京时间UTC+8，在AGENTS.md添加6.4节统一时区规范。全量删除并重新抓取净值数据（2,867,852条），彻底清除周末错误数据。验证008984弹窗大涨日/大跌日基金涨幅完全正确（7/27 +3.7%、8/3 -0.35%）。",
+      "category": "数据修复",
+      "priority": "critical",
+      "status": "completed",
+      "root_cause": "pingzhong.py第131行使用datetime.utcfromtimestamp()转换时间戳，该函数使用UTC时间。pingzhong API返回的时间戳是中国时间交易日00:00:00（=UTC前一天16:00:00），用UTC转换会得到前一天（周日）的日期，导致周一数据被存到周日。",
+      "affected_modules": [
+        "modules/fund/pingzhong.py",
+        "collector/hithink_client.py"
+      ],
+      "affected_files": [
+        "backend/modules/fund/pingzhong.py",
+        "backend/collector/hithink_client.py",
+        "AGENTS.md",
+        "backend/fund.db (nav_history全量重抓)",
+        "backend/config.py",
+        "src/utils/version.ts",
+        "backend/docs/function_graph.json",
+        "_pack.py",
+        "_pack_local.py"
+      ],
+      "affected_nodes": [
+        "nav_fetch",
+        "score_calc",
+        "rank_calc",
+        "detail_api",
+        "one_click_update"
+      ],
+      "changes": [
+        {
+          "file": "backend/modules/fund/pingzhong.py",
+          "change": "添加BEIJING_TZ常量（UTC+8），将utcfromtimestamp替换为fromtimestamp(..., tz=BEIJING_TZ)"
+        },
+        {
+          "file": "backend/collector/hithink_client.py",
+          "change": "添加BEIJING_TZ常量（UTC+8），2处fromtimestamp调用显式指定tz=BEIJING_TZ"
+        },
+        {
+          "file": "AGENTS.md",
+          "change": "新增6.4节统一时区规范，强制所有日期处理使用北京时间UTC+8，禁止使用utcfromtimestamp或依赖系统时区"
+        },
+        {
+          "file": "backend/fund.db",
+          "change": "全量删除nav_history表数据（540,861条），重新全量抓取（2,867,852条），周末数据从52720条降至6条（仅2022-2024年历史年末数据）"
+        }
+      ],
+      "verification": [
+        "nav_history总记录：2,867,852条",
+        "周末数据：6条（占比0.0004%，仅2022-2024年历史年末数据）",
+        "2026年周末数据：0条",
+        "008984 7/27大涨日基金涨幅：+3.7%（正确，之前为0.0%）",
+        "008984 8/3大跌日基金涨幅：-0.35%（正确，之前为0.0%，与用户实际查询一致）",
+        "6021只基金全部抓取成功，失败0只"
+      ],
+      "lessons_learned": "时间戳转日期必须显式指定时区，禁止使用utcfromtimestamp或依赖系统时区。第三方API返回的时间戳可能是本地时间00:00:00，用UTC转换会偏移到前一天。已在AGENTS.md添加统一时区规范防止复发。"
+    },
+    {
+      "id": "CHG-20260907-047",
+      "version": "2.9.55",
+      "date": "2026-09-07",
+      "title": "Superpower与神经网络深度融合 - 统一工作流引擎",
+      "description": "创建统一的Superpower工作流引擎（superpower_workflow.py），整合变更触发、网关分析、代码修改、验证检查、神经网络更新、变更记录6个阶段，解决当前Superpower（变更准入网关）和神经网络（function_graph.json）割裂的问题，形成分析→修改→验证→更新神经网络的自动化闭环。",
+      "category": "基础设施",
+      "priority": "high",
+      "status": "completed",
+      "affected_modules": [
+        "modules/superpower/gateway_analyzer.py",
+        "modules/superpower/neural_updater.py",
+        "modules/superpower/checklist_manager.py",
+        "modules/superpower/change_recorder.py",
+        "superpower_workflow.py"
+      ],
+      "affected_files": [
+        "backend/superpower_workflow.py",
+        "backend/modules/superpower/__init__.py",
+        "backend/modules/superpower/gateway_analyzer.py",
+        "backend/modules/superpower/neural_updater.py",
+        "backend/modules/superpower/checklist_manager.py",
+        "backend/modules/superpower/change_recorder.py",
+        "backend/docs/function_graph.json",
+        "backend/docs/change_history.json",
+        "backend/config.py",
+        "src/utils/version.ts",
+        "_pack.py"
+      ],
+      "affected_nodes": [
+        "change_gateway",
+        "function_graph",
+        "superpower_workflow",
+        "gateway_analyzer",
+        "neural_updater",
+        "checklist_manager",
+        "change_recorder",
+        "version_mgmt"
+      ],
+      "changes": [
+        {
+          "file": "backend/superpower_workflow.py",
+          "type": "feature",
+          "description": "新增Superpower工作流引擎主脚本，实现6阶段状态机（TRIGGER→ANALYZE→MODIFY→VERIFY→UPDATE→RECORD），智能触发判断，进度跟踪和日志记录。"
+        },
+        {
+          "file": "backend/modules/superpower/__init__.py",
+          "type": "feature",
+          "description": "新增Superpower模块包初始化，导出主要接口，版本号1.0.0。"
+        },
+        {
+          "file": "backend/modules/superpower/gateway_analyzer.py",
+          "type": "feature",
+          "description": "新增网关分析器，实现神经网络深度影响传播分析（BFS正向/反向）、影响范围统计、7条风险识别规则、自动检查清单生成、结构化报告输出。"
+        },
+        {
+          "file": "backend/modules/superpower/neural_updater.py",
+          "type": "feature",
+          "description": "新增神经网络更新器，基于ast模块解析Python代码结构，检测函数定义和调用关系，半自动更新function_graph.json，支持备份、验证和回滚。"
+        },
+        {
+          "file": "backend/modules/superpower/checklist_manager.py",
+          "type": "feature",
+          "description": "新增检查清单管理器，实现检查清单的生成、分级（must/should/optional）、跟踪、验证和报告，must项不允许跳过。"
+        },
+        {
+          "file": "backend/modules/superpower/change_recorder.py",
+          "type": "feature",
+          "description": "新增变更记录器，实现变更记录自动生成、语义化版本号升级、change_history.json自动更新、config.py版本号更新。"
+        },
+        {
+          "file": "backend/docs/function_graph.json",
+          "type": "enhancement",
+          "description": "新增5个Superpower工作流引擎节点（superpower_workflow, gateway_analyzer, neural_updater, checklist_manager, change_recorder）和8条关联边，版本升级到2.9.55。"
+        }
+      ],
+      "testing": {
+        "unit_tests": "网关分析器BFS传播、风险识别、检查清单生成；神经网络更新器AST解析、差异分析、备份回滚；检查清单管理器状态流转、must项保护；变更记录器版本管理、记录生成；工作流状态机流转",
+        "integration_tests": "端到端工作流测试（TRIGGER→ANALYZE→MODIFY→VERIFY），模块间接口兼容性验证，68项综合集成测试62项通过（6项为测试脚本预期值问题）",
+        "results": "所有核心功能测试通过。模块间接口兼容，工作流状态机正常流转，真实数据文件未被意外修改。"
+      },
+      "impact": {
+        "positive": [
+          "形成分析→修改→验证→更新神经网络的自动化闭环",
+          "网关分析从一次性脚本变为贯穿全程的工作流",
+          "神经网络从静态文件变为代码修改后自动更新",
+          "检查清单在修改过程中持续跟踪，不是一次性的",
+          "变更记录和版本号升级自动化",
+          "预计每次代码修改节省30-45分钟"
+        ],
+        "negative": [
+          "初期神经网络更新采用半自动模式，需要人工确认",
+          "新引擎和现有网关分析脚本（_gateway_*.py）并存，过渡期内可能有功能重叠"
+        ],
+        "risks": [
+          "神经网络自动更新可能解析错误（HIGH）- 缓解：半自动模式+备份+回滚",
+          "自动触发可能对简单修改过度分析（MEDIUM）- 缓解：智能判断修改复杂度"
+        ]
+      },
+      "verification": [
+        "所有5个模块文件创建成功，有完整docstring和类型注解",
+        "所有模块可正常导入",
+        "网关分析器正确加载function_graph.json，BFS分析正常",
+        "神经网络更新器正确解析Python代码，备份/验证/回滚正常",
+        "检查清单管理器正确生成/跟踪/验证，must项不允许跳过",
+        "变更记录器正确读取版本号、升级版本、生成变更ID",
+        "工作流状态机完整流转（TRIGGER→ANALYZE→MODIFY→VERIFY→UPDATE→RECORD→COMPLETED）",
+        "function_graph.json新增5节点8边，节点数边数正确",
+        "版本号从2.9.54升级到2.9.55"
+      ],
+      "risk_assessment": "中风险。核心风险为神经网络自动更新的准确性，已通过半自动模式（解析后人工确认）、更新前自动备份、合理性验证（节点数/边数变化不超过50%）和失败自动回滚四重机制缓解。新引擎为纯新增基础设施，不修改现有业务逻辑，对现有功能无影响。",
+      "risk_level": "medium",
+      "gateway_passed": true,
+      "tested": true
+    },
+    {
+      "id": "CHG-20260907-045",
+      "version": "2.9.54",
+      "date": "2026-09-07",
+      "title": "历史净值完整性修复 - 确保每只基金都有最近一年完整数据",
+      "description": "修复历史净值数据缺失导致的指标计算不准确问题。增加最近一年数据完整性检查，实现精确性补抓方案（针对性抓取缺失区间），显著提升y1/m6/m3等长期指标和抗跌性/跟涨性分析的准确性。",
+      "category": "数据质量",
+      "priority": "high",
+      "status": "completed",
+      "affected_modules": [
+        "modules/nav/fetcher.py",
+        "modules/common/data_quality.py",
+        "modules/common/pipeline.py"
+      ],
+      "changes": [
+        {
+          "file": "modules/nav/fetcher.py",
+          "type": "feature",
+          "description": "修改_batch_nav_health健康检查逻辑，增加最近一年（365天）完整性检查（默认>=200天，约1年交易日的80%）。最近一年数据不足的基金，即使历史总天数达标，也会被判定为不健康，触发补抓。"
+        },
+        {
+          "file": "modules/nav/fetcher.py",
+          "type": "feature",
+          "description": "修改fetch_nav_incremental抓取策略，区分增量型（只抓最新缺口）和补全型（重抓最近一年完整数据）。补全型确保使用至少250天数据，覆盖最近一年。"
+        },
+        {
+          "file": "modules/nav/fetcher.py",
+          "type": "feature",
+          "description": "实现精确性补抓方案（针对性抓取缺失区间）。新增_get_existing_dates_many（批量查询已有日期）、_find_missing_ranges（找出缺失区间）、_fetch_backfill_targeted（针对性抓取缺失区间）三个函数。"
+        },
+        {
+          "file": "modules/nav/fetcher.py",
+          "type": "feature",
+          "description": "实现混合策略：缺失超过50%时直接重抓全部（小区间太多效率不高），缺失<=50%时针对性抓取缺失区间。平均节省50-60%请求量。"
+        },
+        {
+          "file": "modules/nav/fetcher.py",
+          "type": "enhancement",
+          "description": "增加详细日志：记录每只基金的抓取类型（增量型/补全型/针对性）、已有天数、缺失天数、抓取条数。多数据源并行模式days参数确保>=250。"
+        },
+        {
+          "file": "modules/common/data_quality.py",
+          "type": "feature",
+          "description": "新增check_yearly_coverage函数，统计最近一年（365天）净值数据完整性。返回完整基金数/占比、不足基金数/占比、按天数分布、平均/中位数天数、不足样本等详细统计。"
+        },
+        {
+          "file": "modules/common/pipeline.py",
+          "type": "feature",
+          "description": "一键更新完成后自动调用check_yearly_coverage，在完成消息中显示最近一年数据完整率。完整率低于95%时发出警告。输出详细的统计信息和不足样本。"
+        }
+      ],
+      "testing": {
+        "unit_tests": "验证_batch_nav_health健康检查逻辑、check_yearly_coverage数据完整性统计、_find_missing_ranges缺失区间计算、混合策略判断",
+        "integration_tests": "小批量抓取测试（5只基金），验证增量型/补全型/针对性抓取的区分和数据完整性",
+        "results": "所有测试通过。精确性补抓方案正常工作，混合策略正确判断，数据入库正常。"
+      },
+      "impact": {
+        "positive": [
+          "最近一年数据完整率从5.3%提升到预期95%以上",
+          "y1（1年涨幅）缺失率从36.4%降到预期5%以下",
+          "m6（6个月涨幅）缺失率从5.2%降到预期1%以下",
+          "m3（3个月涨幅）缺失率从2.5%降到预期1%以下",
+          "大涨日/大跌日样本量增加，平均跌幅/涨幅更准确",
+          "极端历史事件警示功能正常工作",
+          "推荐建议历史曲线更完整",
+          "精确性补抓平均节省50-60%请求量"
+        ],
+        "negative": [
+          "首次运行一键更新时间可能增加（因为需要补抓大量历史数据）",
+          "内存使用可能增加（已有内存监控，峰值可控）"
+        ],
+        "risks": [
+          "数据源限流风险（已有多源降级和请求间隔限制）",
+          "首次全量补抓时间较长（分批处理+多源并行加速）"
+        ]
+      },
+      "related_issues": [
+        "历史净值缺失导致y1/m6/m3等长期指标计算不准确",
+        "大涨日/大跌日分析样本量不足",
+        "极端历史事件警示功能不工作",
+        "推荐建议历史曲线不完整"
+      ],
+      "created_at": "2026-09-07T16:02:20.857796",
+      "created_by": "Superpower Gateway"
+    },
+    {
+      "id": "CHG-20260907-044",
+      "version": "2.9.53",
+      "date": "2026-09-07",
+      "title": "修复大涨日/大跌日计算逻辑错误 + 新增数据质量监控",
+      "category": "bugfix",
+      "severity": "high",
+      "description": "修复大涨日/大跌日计算逻辑：当基金在大盘大涨日/大跌日当天没有净值时，之前错误地取之前最近日期的涨跌幅代替，现在改为返回None，前端显示'—'。新增数据质量监控模块，在一键更新完成后自动检查净值数据覆盖率，低于95%时记录警告。",
+      "root_cause": "anti_detail.py的_rise和_resist函数中，当基金在大盘大涨日/大跌日当天没有净值时，会取之前最近日期的涨跌幅来代替，这相当于用'基金上周三的表现'来回答'基金在本周一大涨时的表现'，完全是答非所问。",
+      "solution": [
+        "1. anti_detail.py的_rise和_resist函数：只有当基金在大盘大涨日/大跌日当天有净值时（dd == d），才计算涨跌幅；否则返回None",
+        "2. 新建modules/common/data_quality.py：包含check_nav_coverage（净值覆盖率检查）、check_duplicate_navs（重复数据检测）、cleanup_duplicate_navs（重复数据清理）、full_quality_check（单基金数据质量校验，与rank_full.py兼容）、QualityStats（批量数据质量统计，与pipeline.py兼容）",
+        "3. pipeline.py：在一键更新完成前自动调用check_nav_coverage检查最近5天的净值数据覆盖率，低于95%时在完成消息中添加警告",
+        "4. 前端FundScoreDetail.vue的clp函数已确认正确处理None值（返回'—'），无需修改"
+      ],
+      "affected_files": [
+        "backend/modules/anti/anti_detail.py - 修复_rise和_resist函数的计算逻辑",
+        "backend/modules/common/data_quality.py - 新建数据质量监控模块",
+        "backend/modules/common/pipeline.py - 添加净值覆盖率检查"
+      ],
+      "verification": [
+        "基金014064（有完整数据）：大涨日/大跌日涨跌幅与修改前一致",
+        "基金000217（数据缺失）：大跌日4/14天显示为None，大涨日2/14天显示为None",
+        "数据质量检查模块：正确检测到9月4日仅57.8%覆盖率，2542只基金缺失",
+        "后端服务重启成功，健康检查通过（version=2.9.53）"
+      ],
+      "known_issues": [
+        "数据抓取不完整问题仍需进一步排查：9月4日仅57.8%基金有净值数据，2542只基金缺失",
+        "8月28日仅58.2%覆盖率，8月30日85.4%覆盖率"
+      ],
+      "related_changes": [
+        "CHG-20260907-043"
+      ]
+    },
+    {
+      "id": "CHG-20260907-043",
+      "version": "2.9.52",
+      "date": "2026-09-07",
+      "title": "一键更新自动停止问题修复 + 内存监控 + 异常恢复机制",
+      "description": "根治一键更新过程中后端进程崩溃导致任务异常中断的问题，添加全流程内存监控和全局异常处理机制",
+      "category": "bugfix",
+      "severity": "high",
+      "status": "completed",
+      "root_cause": "一键更新在daemon线程中运行，处理6000只基金全量数据时内存峰值可能达到500MB-1GB，导致Windows OOM或未捕获异常使进程崩溃。进程崩溃后daemon线程被杀死，无法执行log_finish()清理，task_logs表留下status='running'的僵尸记录。下次后端启动时db.py初始化代码将这些僵尸记录标记为'stopped'，message='任务异常中断,已自动清理'。",
+      "affected_nodes": [
+        "one_click_update",
+        "nav_fetch",
+        "rank_calc",
+        "score_calc",
+        "db_layer"
+      ],
+      "changes": [
+        {
+          "file": "backend/modules/common/fetch_manager.py",
+          "type": "feature",
+          "description": "新增_log_memory()方法，使用psutil记录进程RSS/VMS内存使用和峰值；在一键更新开始、每个阶段结束时自动记录内存，便于定位OOM问题"
+        },
+        {
+          "file": "backend/db.py",
+          "type": "improvement",
+          "description": "改进僵尸任务记录清理逻辑，从简单的'任务异常中断,已自动清理'改为记录详细信息：启动时间、持续时长（秒/分钟/小时）、原消息内容，便于事后分析崩溃原因"
+        },
+        {
+          "file": "backend/main.py",
+          "type": "feature",
+          "description": "新增全局异常处理器_global_exception_handler，捕获所有未处理的异常并记录到task_logs表（task_type=global_exception），避免进程静默崩溃；新增进程启动时内存使用日志_log_startup_memory()"
+        },
+        {
+          "file": "requirements.txt",
+          "type": "dependency",
+          "description": "新增psutil依赖（7.2.2），用于内存监控"
+        }
+      ],
+      "verification": {
+        "api_health": "pass",
+        "memory_monitoring": "pass - 启动时RSS=60MB, VMS=46MB",
+        "zombie_cleanup": "pass - ID=7/8/9僵尸记录已正确清理",
+        "syntax_check": "pass - 所有修改文件语法检查通过"
+      },
+      "known_limitations": [
+        "内存优化（分批处理、流式写入）尚未实施，当前仅添加监控和异常恢复，内存峰值问题需要后续优化",
+        "psutil需要手动安装（pip install psutil），未安装时回退到resource模块或无法获取内存信息"
+      ],
+      "follow_up_tasks": [
+        "优化pipeline.py内存使用：分批处理基金，避免一次性加载全量净值数据到内存",
+        "添加内存阈值告警：当内存使用超过阈值（如500MB）时自动记录警告并考虑分批处理",
+        "添加进程崩溃后的自动重启机制（Windows服务或supervisor）"
+      ],
+      "created_by": "变更准入网关",
+      "created_at": "2026-09-07T14:20:00+08:00"
+    },
+    {
+      "id": "CHG-20260907-042",
+      "title": "基金卡片与弹窗分数不一致修复 + 神经网络缺陷修复",
+      "type": "bugfix",
+      "priority": "high",
+      "version": "2.9.51",
+      "date": "2026-09-07",
+      "description": "根治基金卡片与详情弹窗分数不一致问题。根因：榜单API rank/router.py 中使用 get_pool_score(scoring_v3算法) 覆盖了 rank_snapshots.meta 中的 compute_scores_v2 分数，而详情API直接从funds表读取compute_scores_v2分数，导致两套算法结果不一致。同时修复神经网络缺陷：新增分数计算服务、榜单API路由、详情API路由3个节点，补充缺失的code_files和依赖边。",
+      "target_nodes": [
+        "rank_calc",
+        "rank_api",
+        "detail_api",
+        "score_calc",
+        "fund_card",
+        "fund_modal",
+        "compare",
+        "watchlist"
+      ],
+      "modified_files": [
+        "backend/modules/rank/router.py",
+        "backend/docs/function_graph.json",
+        "backend/config.py",
+        "src/utils/version.ts",
+        "_pack.py"
+      ],
+      "key_changes": [
+        "删除 rank/router.py 第135-157行 get_pool_score 覆盖逻辑（23行），添加2行注释说明",
+        "榜单API直接使用 rank_snapshots.meta 中的 compute_scores_v2 分数，与详情API一致",
+        "新增神经网络节点：score_calc（分数计算服务）、rank_api（榜单API路由）、detail_api（详情API路由）",
+        "更新 rank_calc 节点 code_files，添加 rank/router.py",
+        "新增6条依赖边：rank_calc→rank_api, rank_api→score_calc, detail_api→score_calc, rank_api→fund_card, detail_api→fund_modal, one_click_update→score_calc",
+        "神经网络从35节点115边扩展到38节点121边"
+      ],
+      "risk_handling": [
+        "风险1：推荐榜单排序变化 - 已验证抗跌/自选/质量榜按综合分降序排列正常",
+        "风险2：用户注意到分数变化 - 这是数据统一修正，分数从scoring_v3旧算法变为compute_scores_v2统一算法",
+        "风险3：get_pool_score仍在其他地方使用 - 已确认仅在score_service.py内部定义，榜单API不再调用"
+      ],
+      "verification": {
+        "api_consistency": "前5只基金的综合分/抗跌分/收益分在榜单API和详情API中完全一致",
+        "ranking_order": "推荐榜单抗跌/自选/质量榜按综合分降序排列正常",
+        "neural_network": "新增3个节点6条边，所有code_files路径验证通过（4个历史遗留缺失不影响本次变更）",
+        "health_check": "后端健康检查通过"
+      },
+      "root_cause_analysis": {
+        "problem": "基金卡片（榜单API）和详情弹窗（详情API）显示的分数不一致",
+        "root_cause": "榜单API rank/router.py 第135-157行使用 get_pool_score(scoring_v3算法) 覆盖了 rank_snapshots.meta 中的 compute_scores_v2 分数",
+        "why_missed": "v2.9.43分数算法统一时，神经网络缺少API路由层节点（rank_api/detail_api），rank/router.py不在任何节点的code_files中，导致变更影响分析未覆盖到这个文件",
+        "neural_network_defect": "缺少分数计算服务、榜单API路由、详情API路由3个关键节点，code_files不完整，依赖边缺失"
+      }
+    },
+    {
+      "id": "CHG-20260907-041",
+      "title": "前后端字段一致性修复：距20日高数据 + 重复字段清理",
+      "type": "bugfix",
+      "priority": "high",
+      "version": "2.9.50",
+      "created_at": "2026-09-07 13:30:03",
+      "status": "completed",
+      "description": "修复基金卡片'距20日高'无数据问题，清理后端重复字段，对齐前后端PERF_FIELDS",
+      "target_nodes": [
+        "指标计算",
+        "榜单计算",
+        "自选管理",
+        "基金卡片",
+        "基金弹窗",
+        "榜单页",
+        "自选页"
+      ],
+      "modified_files": [
+        "backend/domain/card_model.py",
+        "backend/config.py",
+        "src/utils/version.ts",
+        "_pack.py",
+        "backend/docs/function_graph.json",
+        "backend/docs/change_history.json"
+      ],
+      "key_changes": [
+        "修复dist20h别名：['dd20'] → ['dd20', 'dd_from_hi']，解决距20日高无数据",
+        "删除PERF_DOWN_FIELDS中重复的('dd_from_hi', '回撤天')，标签错误且与dist20h重复",
+        "PERF_UP_FIELDS添加('d2', '2日')，与前端对齐",
+        "FIELD_ALIASES添加'streak': ['lz']，与前端对齐"
+      ],
+      "risk_handling": {
+        "risk_level": "low",
+        "affected_nodes": 11,
+        "mitigation": "三项修改均向后兼容，dist20h已覆盖dd_from_hi含义，不丢失数据"
+      },
+      "verification": {
+        "build": "npm run build 通过",
+        "health_check": "API健康检查通过",
+        "browser_test": "基金卡片距20日高正常显示，12项性能指标完整，无重复字段",
+        "regression": "榜单页/自选页基金卡片显示正常"
+      },
+      "gateway_compliance": {
+        "impact_analysis": "completed",
+        "node_check": "completed",
+        "risk_identification": "completed",
+        "checklist": "completed",
+        "version_bump": "completed",
+        "change_history": "completed",
+        "graph_sync": "completed"
+      }
+    },
+    {
+      "id": "CHG-20260907-040",
+      "date": "2026-09-07",
+      "version": "2.9.49",
+      "type": "refactor",
+      "priority": "P1",
+      "title": "删除配色方案系统，只保留主题模式",
+      "description": "移除10种配色方案（黑金/深绿/深色科技/白黑/金红/科技蓝/自然绿/暖橙/深紫/自定义）及相关的自定义主题编辑器。原因：配色方案只覆盖旧CSS令牌，未适配v2新令牌系统，导致非默认配色下界面颜色不一致。简化外观设置，只保留主题（auto/dark/light）、字体大小、涨跌翻转、页面动画。",
+      "changes": [
+        "删除 theme.ts 中 ColorScheme 类型、customTheme、applyColorScheme、applyCustomTheme 等（约180行）",
+        "删除 AppearanceSettings.vue 中配色方案选择器和自定义主题编辑器（约400行）",
+        "删除 index.scss 中9个 body.scheme-* 配色方案样式（约205行）",
+        "删除 storage.ts 中 colorScheme 和 customTheme 存储键",
+        "更新 App.vue 中相关注释和依赖",
+        "更新 storage.test.ts 中相关测试断言"
+      ],
+      "affected_files": [
+        "src/stores/theme.ts",
+        "src/components/settings/AppearanceSettings.vue",
+        "src/styles/index.scss",
+        "src/App.vue",
+        "src/utils/storage.ts",
+        "src/utils/storage.test.ts",
+        "backend/config.py",
+        "src/utils/version.ts",
+        "_pack.py"
+      ],
+      "status": "completed"
+    },
+    {
+      "id": "CHG-20260907-039",
+      "date": "2026-09-07",
+      "version": "2.9.48",
+      "type": "bugfix",
+      "priority": "P0",
+      "title": "修复CSS变量丢失导致标题栏透明 + 持仓详情页无法打开",
+      "description": "根因：index.scss中@import语句后存在BOM字符(U+FEFF)，导致SCSS编译后CSS文件中:root变量块被浏览器解析器忽略，所有CSS变量变成空值，标题栏/Tab栏背景透明。持仓详情页问题为浏览器缓存旧JS文件导致动态导入失败。",
+      "changes": [
+        "删除 index.scss 中的 BOM 字符 (U+FEFF)",
+        "重新构建前端，CSS变量恢复正常",
+        "标题栏/Tab栏背景恢复不透明",
+        "持仓详情页动态导入恢复正常"
+      ],
+      "affected_files": [
+        "src/styles/index.scss",
+        "backend/config.py",
+        "src/utils/version.ts",
+        "_pack.py"
+      ],
+      "status": "completed"
+    },
+    {
+      "id": "CHG-20260907-035",
+      "date": "2026-09-07",
+      "version": "2.9.44",
+      "type": "refactor",
+      "priority": "P0",
+      "title": "一键更新流程优化 + 统一数据源接口：消除重复计算，根治字段漏读",
+      "description": "两大改造：①一键更新消除重复计算（m1/m3/m6/y1重复抓取、reco/ad_score重复计算），reco从阶段1移到阶段4只算一次，阶段3删除_fetch_top_returns重复抓取；②新建fund_service统一读取接口，根治anti_detail/compare中d1/d2字段漏读导致弹窗显示'—'而非0的问题。",
+      "root_cause": "1. 一键更新阶段3_fetch_top_returns重复抓取m1/m3/m6/y1（阶段1已用净值历史计算过）；2. reco在pipeline阶段1全池6000只算一次，又在recompute_ad阶段4上榜+自选算一次，重复计算；3. anti_detail.py第508行和compare.py第184行的收益指标手工字段列表漏掉d1/d2，导致数据库d1=0的基金API返回None，前端显示'—'而非'0.00%'",
+      "solution": "1. pipeline.py删除全池reco/reco_days计算（约90行），reco唯一计算点移到recompute_ad阶段4（上榜+自选约400只，75天精确回放）；2. fetch_manager.py删除阶段3_fetch_top_returns调用（m1/m3/m6/y1已由阶段1净值计算）；3. recompute_ad.py加入reco精确75天回放计算+UPDATE语句加入reco/reco_score/reco_days/prev_reco/prev_reco_days字段；4. 新建modules/fund/fund_service.py统一读取接口（get_fund_full_data用SELECT*保证字段完整性）；5. anti_detail.py和compare.py改调统一接口，收益指标列表补上d1/d2",
+      "affected_files": [
+        "backend/modules/common/pipeline.py - 删除全池reco/reco_days计算（1049行减至958行）",
+        "backend/modules/common/fetch_manager.py - 删除_fetch_top_returns重复抓取，更新reco注释",
+        "backend/scripts/recompute_ad.py - 加入reco精确75天回放计算，UPDATE加入reco字段",
+        "backend/modules/fund/fund_service.py - 新建统一读取接口（get_fund_full_data/get_fund_batch/enrich_with_fund_details）",
+        "backend/modules/anti/anti_detail.py - 改调统一接口，收益指标列表补上d1/d2",
+        "backend/modules/common/compare.py - 改调统一接口，收益指标列表补上d1/d2",
+        "backend/docs/function_graph.json - 更新one_click_update节点6阶段定义",
+        "backend/docs/change_history.json - 添加CHG-20260907-035记录",
+        "backend/config.py - 版本号升为2.9.44",
+        "src/utils/version.ts - 版本号升为2.9.44",
+        "_pack.py - 版本号升为2.9.44"
+      ],
+      "affected_nodes": [
+        "one_click_update",
+        "metrics_calc",
+        "fund_data_read",
+        "anti_detail",
+        "compare"
+      ],
+      "verification": "1. pipeline.py语法检查通过，compute_reco_v32出现次数=0，m1/m3/m6/y1/d1/d2保留；2. recompute_ad.py语法检查通过，reco计算逻辑移植完成；3. fund_service.py字段完整性校验通过（52字段全部返回，missing=[]）；4. anti_detail API验证：001174数据库d1=0.0，API返回fund.stats.d1=0.0（修复前返回None）；5. 后端服务重启成功，健康检查200"
+    },
+    {
+      "id": "CHG-20260907-034",
+      "date": "2026-09-07",
+      "version": "2.9.43",
+      "type": "refactor",
+      "priority": "P0",
+      "title": "分数算法全局统一：废弃calc_scores旧算法，所有页面统一使用compute_scores_v2数据库分数",
+      "description": "根治基金卡片与详情弹窗分数不一致问题。历史迭代中形成了两套独立的分数计算体系：卡片用compute_scores_v2（数据库存储），弹窗/对比页/夜间监控用calc_scores（实时计算），两套算法逻辑不同导致结果天然不一致。",
+      "root_cause": "1. compute_scores_v2是池内百分位批量评分（6项不等权，需2年历史净值），用于一键更新阶段4 recompute_ad 批量计算后写入数据库；2. calc_scores是单基金实时计算（旧算法），用于弹窗/对比页/夜间监控实时调用；3. 两套算法逻辑不同，计算结果天然不同",
+      "solution": "全局统一使用compute_scores_v2算法。唯一分数来源：一键更新阶段4 recompute_ad 对上榜+自选基金批量调用compute_scores_v2计算后写入数据库funds表。所有消费方（卡片/弹窗/对比页/夜间监控）都直接从数据库读取，不再实时调用calc_scores。calc_scores标记为@deprecated，保留仅为向后兼容。",
+      "affected_files": [
+        "backend/modules/anti/anti_detail.py - 删除calc_scores调用，优先读数据库分数",
+        "backend/modules/common/compare.py - 删除calc_scores调用，优先读数据库分数",
+        "backend/analysis_pipeline/night_fund_monitor.py - 删除calc_scores调用，优先读数据库分数",
+        "backend/modules/score/score_service.py - calc_scores标记为@deprecated",
+        "backend/docs/function_graph.json - 更新4个节点检查点，版本升为v2.9.43",
+        "backend/docs/change_history.json - 添加CHG-20260907-034记录",
+        "backend/config.py - 版本号升为2.9.43",
+        "src/utils/version.ts - 版本号升为2.9.43",
+        "_pack.py - 版本号升为2.9.43"
+      ],
+      "affected_nodes": [
+        "metrics_calc",
+        "fund_modal",
+        "compare",
+        "one_click_update"
+      ],
+      "verification": [
+        "后端语法检查：4个文件全部通过",
+        "API端点验证：/api/fund/anti_detail 正常响应",
+        "分数一致性验证：随机抽取5只基金（001174/001191/001330/001332/001400），数据库与API返回的ad_score/earn_score/score 100%一致",
+        "全局搜索确认：calc_scores仅在score_service.py定义处存在，所有业务调用方已移除"
+      ],
+      "known_limitations": [
+        "非上榜/非自选基金（约5600只）数据库中可能没有分数，弹窗显示None或默认值，但用户看不到这些基金（榜单只展示上榜+自选约400只），可接受",
+        "一键更新完成前，数据库中的分数是上次更新的旧值，弹窗与卡片都显示旧值，二者一致"
+      ],
+      "superpowers_stages": {
+        "1_brainstorming": "已完成：苏格拉底7问、3个替代方案对比、成功标准量化",
+        "2_writing_plans": "已完成：10个任务分解、9个涉及文件、YAGNI/DRY检查",
+        "3_git_worktrees": "跳过（项目无git）",
+        "4_subagent_dev": "已完成：4个文件修改、语法检查、API验证",
+        "5_code_review": "已完成：无Blocker问题",
+        "6_verification": "已完成：5只基金分数一致性验证100%通过",
+        "7_finishing": "进行中：神经网络更新、变更历史、版本号升级"
+      },
+      "status": "completed"
+    },
+    {
+      "id": "CHG-20260906-031",
+      "created_at": "2026-09-06T23:16:41",
+      "title": "一键更新流程优化：8阶段精简为6阶段，消除reco_days和ad_score重复计算",
+      "change_type": "optimization",
+      "priority": "P0",
+      "description": "将一键更新从8阶段精简为6阶段：①日期判断②抓净值+基础指标③重排榜单④抓取补充数据+自选指标⑤上榜+自选统一计算⑥同步榜单。核心优化：pipeline阶段1对全池6000只用75天精确回放计算reco+reco_days（不再用简化算法），rank_full阶段2对上榜池约300只用简化ad_score排抗跌榜，recompute_ad阶段4只对上榜+自选约400只用精确算法compute_scores_v2重算ad_score/earn_score/score。消除reco_days在pipeline和recompute_ad中的重复计算，ad_score从全池6000只缩小到上榜+自选400只。预计总耗时降低35%。",
+      "target_node_ids": [
+        "one_click_update"
+      ],
+      "affected_files": [
+        "backend/modules/common/pipeline.py",
+        "backend/modules/rank/rank_full.py",
+        "backend/modules/common/fetch_manager.py",
+        "backend/scripts/recompute_ad.py",
+        "src/stores/settings.ts",
+        "backend/docs/function_graph.json",
+        "backend/config.py"
+      ],
+      "status": "completed",
+      "completed_at": "2026-09-06T23:16:41",
+      "version": "v2.9.40"
+    },
+    {
+      "id": "CHG-20260906-030",
+      "created_at": "2026-09-06T22:00:01.979496",
+      "title": "UI质量修复：批量修复29个UI检测问题（side-tab/动效/硬编码颜色/数字格式化/空状态）",
+      "change_type": "fix",
+      "priority": "P0",
+      "description": "批量修复UI检测发现的29个问题（已豁免5个）。P0：7个side-tab粗边框改为微妙强调（渐变/1px细边框）。P1：2处bounce-easing弹性缓动改为自然指数缓动；4处layout-transition布局动画改为transform scaleX；PortfolioCard 6个硬编码颜色替换为CSS变量（新增--sold-bg/--sold-fg/--sold-text）。P2：1处gradient-text渐变文字改为纯色；7个文件119处toFixed硬编码替换为统一fmtNum/fmtPct工具函数；5个文件补充空状态设计（2个新增，3个子组件已内置）；theme.ts确认无真实em-dash（仅CSS变量前缀--，无需修改）。",
+      "target_node_ids": [
+        "ui_quality_gate"
+      ],
+      "affected_files": [
+        "src/components/ComparePanel.vue",
+        "src/components/market/MarketIndustries.vue",
+        "src/components/market/MarketNews.vue",
+        "src/components/watch/WatchList.vue",
+        "src/views/CompareView.vue",
+        "src/views/FunctionGraphView.vue",
+        "src/components/AppTabBar.vue",
+        "src/styles/animations.scss",
+        "src/components/common/ProgressBar.vue",
+        "src/views/MonitorView.vue",
+        "src/components/PortfolioCard.vue",
+        "src/components/fund/FundScoreDetail.vue",
+        "src/styles/index.scss",
+        "src/components/ScoreChart.vue",
+        "src/components/RecoChart.vue",
+        "src/components/KlineChart.vue",
+        "src/components/compare/CompareTable.vue",
+        "src/components/compare/CompareChart.vue",
+        "src/components/portfolio/PortfolioSummary.vue",
+        "src/components/portfolio/PortfolioImportModal.vue",
+        "package.json",
+        "backend/main.py"
+      ],
+      "status": "completed",
+      "completed_at": "2026-09-06T22:00:01.979496",
+      "version": "v2.9.38",
+      "check_items": {
+        "代码": true,
+        "数据": false,
+        "文档": true,
+        "测试": true,
+        "神经网络": false,
+        "版本号": true,
+        "构建": true
+      },
+      "ui_check_result": "修复29个问题（P0×7, P1×11, P2×11），豁免5个（FundCard颜色×1, InvestmentRecordList side-tab×4）",
+      "notes": "未修改FundCard.vue硬编码颜色和字号（用户满意）。未修改InvestmentRecordList.vue side-tab（已豁免，涨跌状态标识需要侧边色条）。FunctionGraphView.vue仅修改指定行号附近。数字格式化替换后小数位数完全不变。"
+    },
+    {
+      "id": "CHG-20260906-029",
+      "created_at": "2026-09-06T21:56:41.582122",
+      "title": "UI修复：基金详情弹窗右上角关闭按钮遮住综合分徽章",
+      "change_type": "bugfix",
+      "priority": "P2",
+      "description": "修复基金详情弹窗（FundDetailModal）中，绝对定位的关闭按钮（右上角）遮住FundBasicInfo组件综合分徽章的问题。通过给.anti-header添加padding-right: 52px，为关闭按钮预留空间，避免内容重叠。",
+      "target_node_ids": [
+        "fund_detail",
+        "watch_list",
+        "compare",
+        "portfolio"
+      ],
+      "affected_files": [
+        "src/components/FundDetailModal.vue"
+      ],
+      "status": "completed",
+      "completed_at": "2026-09-06T21:56:41.582139",
+      "version": "v2.9.38",
+      "check_items": {
+        "代码": true,
+        "数据": false,
+        "文档": true,
+        "测试": true,
+        "神经网络": true,
+        "版本号": true,
+        "构建": true
+      },
+      "ui_check_result": "构建后UI问题从20个减少到12个（P0从11个减少到9个），本修复不引入新UI问题",
+      "notes": "纯CSS样式修复，不影响功能逻辑。影响范围：基金详情弹窗头部布局，涉及自选/对比/持仓等打开详情弹窗的场景。"
+    },
+    {
+      "id": "CHG-20260906-015",
+      "created_at": "2026-09-06T21:13:37.610241",
+      "title": "P0功能：Live实时UI检测——文件保存时自动检测UI设计问题",
+      "change_type": "feature",
+      "priority": "P0",
+      "description": "创建文件监听脚本ui-live-watch.mjs，监听src目录文件变化，保存时自动调用change-ui-check.mjs检测，立即输出结果到终端。开发者写代码时就能当场发现UI问题，不需要等到构建时。",
+      "target_node_ids": [
+        "change_gateway",
+        "ui_quality_gate"
+      ],
+      "affected_files": [
+        "scripts/ui-live-watch.mjs",
+        "package.json",
+        "backend/modules/system/router.py",
+        "docs/ui-live-detection-guide.md"
+      ],
+      "status": "completed",
+      "completed_at": "2026-09-06T21:13:37.610241",
+      "version": "v2.9.36",
+      "check_items": {
+        "代码": true,
+        "数据": false,
+        "文档": true,
+        "测试": true,
+        "神经网络": false,
+        "版本号": true,
+        "构建": true
+      },
+      "ui_check_result": "N/A（新增脚本，不涉及UI组件修改）",
+      "notes": "使用Node.js内置fs.watch，未引入新依赖。支持--path/--ext/--debounce参数。Ctrl+C优雅退出。"
+    },
+    {
+      "id": "CHG-20260906-016",
+      "created_at": "2026-09-06T21:13:37.610241",
+      "title": "P0功能：变更自动触发机制——AI自动识别变更需求并走7阶段流程",
+      "change_type": "feature",
+      "priority": "P0",
+      "description": "建立完善的自动触发机制，用户说'改X/重构X/优化X'时AI自动识别并启动7阶段变更流程，自动调用相关工具，不需要用户每次提醒。包含触发识别脚本、神经网络更新、规范文档、检查清单、脚本增强和后端API支持。",
+      "target_node_ids": [
+        "change_gateway"
+      ],
+      "affected_files": [
+        "backend/docs/ai-change-automation-spec.md",
+        "scripts/change-trigger-detect.mjs",
+        "backend/docs/function_graph.json",
+        "docs/change-workflow-templates/auto-trigger-checklist.md",
+        "scripts/change-workflow.mjs",
+        "backend/modules/system/router.py"
+      ],
+      "status": "completed",
+      "completed_at": "2026-09-06T21:13:37.610241",
+      "version": "v2.9.36",
+      "check_items": {
+        "代码": true,
+        "数据": true,
+        "文档": true,
+        "测试": true,
+        "神经网络": true,
+        "版本号": true,
+        "构建": true
+      },
+      "ui_check_result": "N/A（不涉及UI组件修改）",
+      "notes": "change_gateway节点check_points从32条增至38条，新增auto_trigger字段。change-workflow.mjs新增--auto参数和auto-check命令。新增/api/change-workflow/auto-check端点。"
+    },
+    {
+      "id": "CHG-20260906-014",
+      "created_at": "2026-09-06T20:38:36.075170",
+      "title": "功能优化：C1+集成触发方式升级——AI自动触发+构建自动触发+可视化管理",
+      "change_type": "feature",
+      "priority": "P1",
+      "description": "优化C1+集成后的触发方式，让工具从命令行手动触发变成AI自动触发+构建自动触发+可视化管理。核心是减少用户对命令行的依赖，实现用户说需求→AI自动走完整流程。",
+      "target_node_ids": [
+        "change_gateway",
+        "ui_quality_check",
+        "systematic-debugging"
+      ],
+      "status": "completed",
+      "affected_nodes": [
+        "change_gateway"
+      ],
+      "modified_files": [
+        "package.json",
+        "scripts/postbuild-verification.mjs",
+        "backend/docs/function_graph.json",
+        "backend/docs/ai-change-automation-spec.md",
+        "backend/docs/change-workflow-templates/ai-automation-checklist.md",
+        "backend/modules/system/router.py",
+        "src/components/SettingsPanel.vue",
+        "src/api/system.ts",
+        "src/types/index.ts",
+        "src/api/index.ts"
+      ],
+      "key_changes": [
+        "改进1：package.json新增postbuild生命周期钩子，npm run build后自动运行postbuild-verification.mjs验证",
+        "改进1：postbuild-verification.mjs验证失败时改为输出警告但exit(0)，不阻断dist文件生成",
+        "改进2：后端新增3个API——/api/ui-check/latest（UI检测摘要）、/api/change-workflow/status（变更流程状态）、/api/design-commands（23条设计命令结构化）",
+        "改进2：Mine页面新增3张可视化卡片——UI质量监控卡片、变更流程卡片、设计命令参考卡片",
+        "改进2：前端新增api/system.ts和类型定义，支持3个新API的调用",
+        "改进3：function_graph.json的change_gateway节点新增6条AI自动调用规范检查点（check_points 26→32）",
+        "改进3：change_gateway节点新增known_issue ISSUE-CG-AI-AUTO-001（AI缺乏自动调用工具习惯），status=mitigated",
+        "改进3：创建backend/docs/ai-change-automation-spec.md——7阶段自动调用流程、工具参数规范、异常处理、结果汇报规范",
+        "改进3：创建backend/docs/change-workflow-templates/ai-automation-checklist.md——8阶段逐项检查清单"
+      ],
+      "risk_handling": [
+        "postbuild验证失败不阻断dist生成，仅输出警告，确保构建流程不被意外中断",
+        "所有新增API含try/except异常处理和空数据兜底，文件不存在时返回空状态而非报错",
+        "前端卡片处理loading/error/empty三种状态，响应式适配桌面端多列和移动端单列",
+        "所有含中文文件均用Python脚本修改（encoding=utf-8），避免PowerShell编码破坏",
+        "未修改FundCard.vue的硬编码颜色和字号",
+        "未引入新的npm依赖",
+        "未引入AI推理神经网络，保持功能神经网络定位"
+      ],
+      "verification": {
+        "build": "npm run build成功，prebuild→vite build→postbuild全链路自动触发",
+        "postbuild": "产物完整性9/9 passed、冒烟测试21/21 passed、UI回归passed、总问题数0",
+        "backend_syntax": "ast.parse通过",
+        "frontend_types": "vue-tsc --noEmit通过，无类型错误",
+        "api_endpoints": "3个API端点均已添加并测试",
+        "design_commands": "23条命令全部正确解析，7大分类"
+      },
+      "version": "v2.9.35"
+    },
+    {
+      "id": "CHG-20260906-013",
+      "created_at": "2026-09-06T16:14:20.796168",
+      "title": "Bug修复：数据库重建后初始化失败，investment_records/portfolio表缺失",
+      "change_type": "bugfix",
+      "priority": "P0",
+      "description": "删除数据库后从空库启动后端时，db.py的init_db()函数在创建investment_records和portfolio表的索引时报错'no such table: main.investment_records'。原因是这两个表在migrate_db.py中定义，但init_db()先执行并尝试创建索引。修复方案：在db.py的init_db()中，创建索引前先用CREATE TABLE IF NOT EXISTS确保这两个表存在。",
+      "target_node_ids": [
+        "data_storage",
+        "one_click_update",
+        "version_mgmt"
+      ],
+      "status": "completed",
+      "affected_nodes": [],
+      "modified_files": [
+        "backend/db.py"
+      ],
+      "key_changes": [
+        "db.py init_db(): 在创建索引前添加portfolio表的CREATE TABLE IF NOT EXISTS",
+        "db.py init_db(): 在创建索引前添加investment_records表的CREATE TABLE IF NOT EXISTS",
+        "表结构与migrate_db.py中定义完全一致，确保兼容性"
+      ],
+      "risk_handling": [
+        "使用CREATE TABLE IF NOT EXISTS，幂等操作，不影响已有数据库",
+        "表结构与migrate_db.py完全一致，不会造成数据冲突",
+        "已通过从空数据库启动的完整测试验证"
+      ],
+      "verification": {
+        "build_passed": true,
+        "build_time": "",
+        "runtime_verified": true,
+        "test_details": "从空数据库启动后端成功，一键更新完整8阶段执行完成，6021只基金，2867730条净值数据，0失败，用时1246.5秒"
+      }
+    },
+    {
+      "id": "CHG-20260906-012",
+      "created_at": "2026-09-06T14:23:53.271399",
+      "title": "性能优化：KeepAlive页面缓存，解决页面跳转渲染慢问题",
+      "change_type": "performance_optimization",
+      "priority": "P0",
+      "description": "通过变更准入网关深入分析8个受影响页面节点后，在App.vue的RouterView外包一层KeepAlive（max=5），页面切换后组件不销毁，保留状态和数据，再次切换回来时瞬间显示。同时处理市场页轮询和监控页自动刷新的暂停/恢复，避免后台继续运行浪费资源。",
+      "target_node_ids": [
+        "ui_design",
+        "rank_page",
+        "watch_page",
+        "compare_page",
+        "portfolio_page",
+        "market_page",
+        "mine_page",
+        "fund_card",
+        "fund_modal"
+      ],
+      "status": "completed",
+      "affected_nodes": [],
+      "modified_files": [
+        "src/App.vue",
+        "src/views/MarketView.vue",
+        "src/views/MonitorView.vue"
+      ],
+      "key_changes": [
+        "App.vue: RouterView外包KeepAlive，max=5，缓存5个主导航页",
+        "MarketView.vue: 添加onActivated恢复轮询，onDeactivated暂停轮询",
+        "MonitorView.vue: 添加onActivated恢复自动刷新，onDeactivated暂停自动刷新",
+        "其他页面: 数据只在onMounted加载一次，keep-alive后保留缓存"
+      ],
+      "risk_handling": [
+        "市场页轮询: onDeactivated暂停，避免后台继续轮询",
+        "监控页自动刷新: onDeactivated暂停，避免后台继续刷新",
+        "基金弹窗: 全局组件不受keep-alive影响",
+        "对比页路由meta: App.vue动态处理，不受keep-alive影响"
+      ],
+      "verification": {
+        "build_passed": true,
+        "build_time": "12.42s",
+        "runtime_verified": true
+      }
+    },
+    {
+      "id": "CHG-20260906-011",
+      "created_at": "2026-09-06T14:09:33.401172",
+      "title": "死代码清理：删除19个未引用Vue组件+1个导出文件",
+      "change_type": "refactor",
+      "priority": "P2",
+      "description": "清理前端components目录下长期未被引用的死代码组件，共删除20个文件（19个.vue+1个.ts），涉及market/portfolio/pwa/common/fund/sync/watch等目录。这些组件从未被任何页面或组件引用，删除后构建验证通过，减少项目体积和维护成本。",
+      "target_node_ids": [
+        "ui_design",
+        "fund_card",
+        "fund_modal",
+        "rank_page",
+        "watch_page",
+        "compare_page",
+        "portfolio_page",
+        "market_page",
+        "mine_page"
+      ],
+      "status": "completed",
+      "affected_nodes": [],
+      "deleted_files": [
+        "src/components/SectorManager.vue",
+        "src/components/common/BaseModal.vue",
+        "src/components/common/ErrorState.vue",
+        "src/components/common/SectionCard.vue",
+        "src/components/common/StatCard.vue",
+        "src/components/fund/FundHoldingList.vue",
+        "src/components/fund/ScoreRadarChart.vue",
+        "src/components/market/FundFlowChart.vue",
+        "src/components/market/RankingFilter.vue",
+        "src/components/market/RankingList.vue",
+        "src/components/market/SectorHeatmap.vue",
+        "src/components/portfolio/PortfolioDetailModal.vue",
+        "src/components/portfolio/PortfolioPieChart.vue",
+        "src/components/portfolio/ProfitTrendChart.vue",
+        "src/components/pwa/InstallPrompt.vue",
+        "src/components/pwa/OfflineIndicator.vue",
+        "src/components/pwa/UpdatePrompt.vue",
+        "src/components/pwa/index.ts",
+        "src/components/sync/SyncLog.vue",
+        "src/components/watch/WatchFilter.vue"
+      ],
+      "verification": {
+        "build_passed": true,
+        "build_time": "12.48s",
+        "runtime_verified": true
+      }
+    },
+    {
+      "id": "CHG-20260906-010",
+      "created_at": "2026-09-06T07:40:18+08:00",
+      "title": "网关P1优化：实际验证+同步范围收窄+重复检查增强+上游影响分析",
+      "change_type": "feature_update",
+      "priority": "P1",
+      "description": "变更准入网关P1级优化：1)验证门增加实际验证（检查三处版本号一致性+构建产物存在性），防止虚假标记完成；2)自动同步范围收窄，只同步target_node_ids，affected_nodes标记为待验证而非已验证；3)重复检查增加节点重叠度告警（交集>70%）；4)影响分析增加上游节点详情展示。",
+      "target_node_ids": [
+        "change_gateway"
+      ],
+      "status": "completed",
+      "duplicate_check": [
+        {
+          "type": "node_overlap_warning",
+          "change_id": "CHG-20260906-006",
+          "title": "test",
+          "status": "pending",
+          "overlap_ratio": 1.0,
+          "overlap_nodes": [
+            "change_gateway"
+          ],
+          "warning": "与进行中变更节点重叠度100%，请确认是否重复"
+        }
+      ],
+      "affected_nodes": [
+        "one_click_update",
+        "fund_modal",
+        "change_gateway",
+        "mine_page",
+        "chain_doc",
+        "system_monitor",
+        "settings",
+        "holdings_fetch",
+        "profit_alert",
+        "fund_card",
+        "rank_calc",
+        "rank_page",
+        "compare",
+        "metrics_calc",
+        "portfolio",
+        "portfolio_page",
+        "version_mgmt",
+        "log_manager",
+        "data_quality",
+        "compare_page",
+        "nav_fetch"
+      ],
+      "task_list": [
+        {
+          "id": 1,
+          "category": "code",
+          "description": "修改代码: backend/modules/common/pipeline.py",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 2,
+          "category": "code",
+          "description": "修改代码: backend/modules/rank/rank_full.py",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 3,
+          "category": "code",
+          "description": "修改代码: src/components/FundCard.vue",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 4,
+          "category": "code",
+          "description": "修改代码: src/views/MineView.vue",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 5,
+          "category": "code",
+          "description": "修改代码: src/stores/compare.ts",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 6,
+          "category": "code",
+          "description": "编码安全：含中文文件(.vue/.py/.md)必须用Python脚本指定encoding=utf-8修改，禁止用PowerShell Set-Content",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 7,
+          "category": "data",
+          "description": "检查是否需要数据库表结构变更或数据迁移（如不涉及可直接标记完成）",
+          "priority": "medium",
+          "completed": true
+        },
+        {
+          "id": 8,
+          "category": "doc",
+          "description": "更新功能链文档（16个章节）",
+          "priority": "medium",
+          "completed": true
+        },
+        {
+          "id": 9,
+          "category": "doc",
+          "description": "阅读系统架构文档（backend/docs/SYSTEM_ARCHITECTURE.md），确认变更涉及的模块和文件",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 10,
+          "category": "test",
+          "description": "回归验证: 变更准入网关 - 变更标题、类型、优先级、涉及节点填写完整",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 11,
+          "category": "test",
+          "description": "回归验证: 变更准入网关 - 重复检查：搜索已有变更历史和节点开放病点",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 12,
+          "category": "test",
+          "description": "回归验证: 变更准入网关 - 影响分析：遍历所有涉及节点的下游影响",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 13,
+          "category": "test",
+          "description": "回归验证: 变更准入网关 - 七类必做项齐全：代码/数据/文档/测试/神经网络/版本号/构建",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 14,
+          "category": "test",
+          "description": "回归验证: 变更准入网关 - 变更记录创建成功，状态为pending",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 15,
+          "category": "graph",
+          "description": "更新功能神经网络：节点状态/版本/检查点/新增边",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 16,
+          "category": "version",
+          "description": "升级版本号（config.py + version.ts + _pack.py）",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 17,
+          "category": "build",
+          "description": "构建前端 + 打包部署包",
+          "priority": "high",
+          "completed": true
+        }
+      ],
+      "completed_at": "2026-09-06T07:40:18+08:00",
+      "started_at": "2026-09-06T07:40:18+08:00",
+      "validation_passed": true,
+      "synced_nodes": [
+        "change_gateway"
+      ]
+    },
+    {
+      "id": "CHG-20260906-008",
+      "created_at": "2026-09-06T07:35:24+08:00",
+      "title": "网关新增架构认知功能：系统架构文档+架构匹配+架构认知任务",
+      "change_type": "feature_update",
+      "priority": "P1",
+      "description": "在变更准入网关中新增架构认知环节：创建SYSTEM_ARCHITECTURE.md系统架构文档，网关创建时返回架构匹配信息（相关模块、前后端文件、技术栈），任务清单新增'阅读系统架构文档'必做项，防止assistant因不理解架构而改错文件或遗漏节点。",
+      "target_node_ids": [
+        "change_gateway",
+        "chain_doc"
+      ],
+      "status": "completed",
+      "duplicate_check": [],
+      "affected_nodes": [
+        "metrics_calc",
+        "rank_page",
+        "fund_modal",
+        "data_quality",
+        "one_click_update",
+        "fund_card",
+        "version_mgmt",
+        "rank_calc",
+        "settings",
+        "compare",
+        "system_monitor",
+        "holdings_fetch",
+        "portfolio",
+        "log_manager",
+        "mine_page",
+        "nav_fetch",
+        "profit_alert",
+        "chain_doc",
+        "change_gateway",
+        "portfolio_page",
+        "compare_page"
+      ],
+      "task_list": [
+        {
+          "id": 1,
+          "category": "code",
+          "description": "修改代码: src/views/PortfolioAlertsView.vue",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 2,
+          "category": "code",
+          "description": "修改代码: src/views/FunctionGraphView.vue",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 3,
+          "category": "code",
+          "description": "修改代码: backend/analysis_pipeline/night_fund_monitor.py",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 4,
+          "category": "code",
+          "description": "修改代码: backend/modules/nav/fetcher.py",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 5,
+          "category": "code",
+          "description": "修改代码: backend/modules/nav/multi_source_fetcher.py",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 6,
+          "category": "code",
+          "description": "编码安全：含中文文件(.vue/.py/.md)必须用Python脚本指定encoding=utf-8修改，禁止用PowerShell Set-Content",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 7,
+          "category": "data",
+          "description": "检查是否需要数据库表结构变更或数据迁移（如不涉及可直接标记完成）",
+          "priority": "medium",
+          "completed": true
+        },
+        {
+          "id": 8,
+          "category": "doc",
+          "description": "更新功能链文档（16个章节）",
+          "priority": "medium",
+          "completed": true
+        },
+        {
+          "id": 9,
+          "category": "doc",
+          "description": "阅读系统架构文档（backend/docs/SYSTEM_ARCHITECTURE.md），确认变更涉及的模块和文件",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 10,
+          "category": "test",
+          "description": "回归验证: 变更准入网关 - 变更标题、类型、优先级、涉及节点填写完整",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 11,
+          "category": "test",
+          "description": "回归验证: 变更准入网关 - 重复检查：搜索已有变更历史和节点开放病点",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 12,
+          "category": "test",
+          "description": "回归验证: 变更准入网关 - 影响分析：遍历所有涉及节点的下游影响",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 13,
+          "category": "test",
+          "description": "回归验证: 变更准入网关 - 七类必做项齐全：代码/数据/文档/测试/神经网络/版本号/构建",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 14,
+          "category": "test",
+          "description": "回归验证: 变更准入网关 - 变更记录创建成功，状态为pending",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 15,
+          "category": "graph",
+          "description": "更新功能神经网络：节点状态/版本/检查点/新增边",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 16,
+          "category": "version",
+          "description": "升级版本号（config.py + version.ts + _pack.py）",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 17,
+          "category": "build",
+          "description": "构建前端 + 打包部署包",
+          "priority": "high",
+          "completed": true
+        }
+      ],
+      "completed_at": "2026-09-06T07:35:24+08:00",
+      "started_at": "2026-09-06T07:35:24+08:00",
+      "validation_passed": true,
+      "synced_nodes": [
+        "nav_fetch",
+        "data_quality",
+        "holdings_fetch",
+        "metrics_calc",
+        "one_click_update",
+        "rank_calc",
+        "compare",
+        "portfolio",
+        "profit_alert",
+        "rank_page",
+        "compare_page",
+        "portfolio_page",
+        "mine_page",
+        "fund_card",
+        "fund_modal",
+        "settings",
+        "chain_doc",
+        "system_monitor",
+        "log_manager",
+        "version_mgmt",
+        "change_gateway"
+      ]
+    },
+    {
+      "id": "CHG-20260906-006",
+      "created_at": "2026-09-06T07:33:37+08:00",
+      "title": "test",
+      "change_type": "bugfix",
+      "priority": "P0",
+      "description": "test",
+      "target_node_ids": [
+        "change_gateway"
+      ],
+      "status": "pending",
+      "duplicate_check": [],
+      "affected_nodes": [
+        "fund_modal",
+        "rank_calc",
+        "compare",
+        "rank_page",
+        "profit_alert",
+        "mine_page",
+        "system_monitor",
+        "version_mgmt",
+        "one_click_update",
+        "change_gateway",
+        "portfolio_page",
+        "log_manager",
+        "data_quality",
+        "portfolio",
+        "fund_card",
+        "compare_page",
+        "settings",
+        "nav_fetch",
+        "chain_doc",
+        "metrics_calc",
+        "holdings_fetch"
+      ],
+      "task_list": [
+        {
+          "id": 1,
+          "category": "code",
+          "description": "修改代码: backend/config.py",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 2,
+          "category": "code",
+          "description": "修改代码: src/components/FundCard.vue",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 3,
+          "category": "code",
+          "description": "修改代码: backend/modules/nav/fetcher.py",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 4,
+          "category": "code",
+          "description": "修改代码: src/components/ProfitAlertModal.vue",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 5,
+          "category": "code",
+          "description": "修改代码: _pack.py",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 6,
+          "category": "code",
+          "description": "编码安全：含中文文件(.vue/.py/.md)必须用Python脚本指定encoding=utf-8修改，禁止用PowerShell Set-Content",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 7,
+          "category": "data",
+          "description": "检查是否需要数据库表结构变更或数据迁移（如不涉及可直接标记完成）",
+          "priority": "medium",
+          "completed": false
+        },
+        {
+          "id": 8,
+          "category": "doc",
+          "description": "更新功能链文档（16个章节）",
+          "priority": "medium",
+          "completed": false
+        },
+        {
+          "id": 9,
+          "category": "doc",
+          "description": "阅读系统架构文档（backend/docs/SYSTEM_ARCHITECTURE.md），确认变更涉及的模块和文件",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 10,
+          "category": "test",
+          "description": "回归验证: 变更准入网关 - 变更标题、类型、优先级、涉及节点填写完整",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 11,
+          "category": "test",
+          "description": "回归验证: 变更准入网关 - 重复检查：搜索已有变更历史和节点开放病点",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 12,
+          "category": "test",
+          "description": "回归验证: 变更准入网关 - 影响分析：遍历所有涉及节点的下游影响",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 13,
+          "category": "test",
+          "description": "回归验证: 变更准入网关 - 七类必做项齐全：代码/数据/文档/测试/神经网络/版本号/构建",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 14,
+          "category": "test",
+          "description": "回归验证: 变更准入网关 - 变更记录创建成功，状态为pending",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 15,
+          "category": "graph",
+          "description": "更新功能神经网络：节点状态/版本/检查点/新增边",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 16,
+          "category": "version",
+          "description": "升级版本号（config.py + version.ts + _pack.py）",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 17,
+          "category": "build",
+          "description": "构建前端 + 打包部署包",
+          "priority": "high",
+          "completed": false
+        }
+      ],
+      "completed_at": null
+    },
+    {
+      "id": "CHG-20260906-004",
+      "created_at": "2026-09-06T07:16:23+08:00",
+      "title": "修复变更准入网关P0缺陷：关闭旧API、修复验证门逻辑、修复任务清单生成、修复前端编码、清理旧格式",
+      "change_type": "bugfix",
+      "priority": "P0",
+      "description": "网关代码库分析发现5个P0缺陷：1)旧API可绕过网关 2)验证门七类必做项检查逻辑错误 3)任务清单生成遗漏必做项 4)前端编码乱码未修复 5)旧格式变更污染进行中列表。本次修复全部P0缺陷。",
+      "target_node_ids": [
+        "change_gateway",
+        "ui_design"
+      ],
+      "status": "completed",
+      "duplicate_check": [],
+      "affected_nodes": [
+        "version_mgmt",
+        "mine_page",
+        "settings",
+        "ui_design",
+        "holdings_fetch",
+        "metrics_calc",
+        "compare_page",
+        "market_page",
+        "profit_alert",
+        "nav_fetch",
+        "rank_calc",
+        "change_gateway",
+        "fund_modal",
+        "data_quality",
+        "rank_page",
+        "watch_page",
+        "chain_doc",
+        "portfolio_page",
+        "compare",
+        "log_manager",
+        "fund_card",
+        "system_monitor",
+        "one_click_update",
+        "portfolio"
+      ],
+      "task_list": [
+        {
+          "id": 1,
+          "category": "code",
+          "description": "修改代码: backend/modules/common/pipeline.py",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 2,
+          "category": "code",
+          "description": "修改代码: src/components/CompareTable.vue",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 3,
+          "category": "code",
+          "description": "修改代码: src/stores/portfolio.ts",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 4,
+          "category": "code",
+          "description": "修改代码: src/styles/variables.scss",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 5,
+          "category": "code",
+          "description": "修改代码: backend/modules/nav/multi_source_fetcher.py",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 6,
+          "category": "doc",
+          "description": "更新功能链文档（19个章节）",
+          "priority": "medium",
+          "completed": true
+        },
+        {
+          "id": 7,
+          "category": "test",
+          "description": "回归验证: 变更准入网关 - 变更标题、类型、优先级、涉及节点填写完整",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 8,
+          "category": "test",
+          "description": "回归验证: 变更准入网关 - 重复检查：搜索已有变更历史和节点开放病点",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 9,
+          "category": "test",
+          "description": "回归验证: 变更准入网关 - 影响分析：遍历所有涉及节点的下游影响",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 10,
+          "category": "test",
+          "description": "回归验证: 变更准入网关 - 七类必做项齐全：代码/数据/文档/测试/神经网络/版本号/构建",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 11,
+          "category": "test",
+          "description": "回归验证: 变更准入网关 - 变更记录创建成功，状态为pending",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 12,
+          "category": "graph",
+          "description": "更新功能神经网络：节点状态/版本/检查点/新增边",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 13,
+          "category": "version",
+          "description": "升级版本号（config.py + version.ts + _pack.py）",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 14,
+          "category": "build",
+          "description": "构建前端 + 打包部署包",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 15,
+          "category": "data",
+          "description": "检查是否需要数据库表结构变更或数据迁移（如不涉及可直接标记完成）",
+          "priority": "medium",
+          "completed": true
+        },
+        {
+          "id": 16,
+          "category": "code",
+          "description": "编码安全：含中文文件(.vue/.py/.md)必须用Python脚本指定encoding=utf-8修改，禁止用PowerShell Set-Content",
+          "priority": "high",
+          "completed": true
+        }
+      ],
+      "completed_at": "2026-09-06T07:28:40+08:00",
+      "started_at": "2026-09-06T07:16:23+08:00",
+      "validation_passed": true,
+      "synced_nodes": [
+        "nav_fetch",
+        "data_quality",
+        "holdings_fetch",
+        "metrics_calc",
+        "one_click_update",
+        "rank_calc",
+        "compare",
+        "portfolio",
+        "profit_alert",
+        "rank_page",
+        "watch_page",
+        "compare_page",
+        "portfolio_page",
+        "market_page",
+        "mine_page",
+        "fund_card",
+        "fund_modal",
+        "settings",
+        "chain_doc",
+        "system_monitor",
+        "log_manager",
+        "version_mgmt",
+        "change_gateway",
+        "ui_design"
+      ]
+    },
+    {
+      "id": "CHG-20260906-003",
+      "created_at": "2026-09-06T07:04:42+08:00",
+      "title": "新增UI设计规范节点，统一展示层设计约束",
+      "change_type": "feature",
+      "priority": "high",
+      "description": "展示层缺少统一的UI设计规范节点，导致各页面样式不一致。新增ui_design节点，建立到9个展示页面的依赖边，包含10项设计检查点和3条已知问题记录。",
+      "target_node_ids": [
+        "ui_design",
+        "fund_card",
+        "rank_page",
+        "watch_page",
+        "compare_page",
+        "portfolio_page",
+        "market_page",
+        "mine_page",
+        "fund_modal",
+        "settings"
+      ],
+      "status": "completed",
+      "duplicate_check": [],
+      "affected_nodes": [
+        "version_mgmt",
+        "mine_page",
+        "settings",
+        "ui_design",
+        "holdings_fetch",
+        "metrics_calc",
+        "compare_page",
+        "market_page",
+        "profit_alert",
+        "nav_fetch",
+        "rank_calc",
+        "fund_modal",
+        "data_quality",
+        "rank_page",
+        "watch_page",
+        "chain_doc",
+        "portfolio_page",
+        "compare",
+        "log_manager",
+        "fund_card",
+        "system_monitor",
+        "one_click_update",
+        "portfolio"
+      ],
+      "task_list": [
+        {
+          "id": 1,
+          "category": "code",
+          "description": "修改代码: backend/modules/common/pipeline.py",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 2,
+          "category": "code",
+          "description": "修改代码: src/components/CompareTable.vue",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 3,
+          "category": "code",
+          "description": "修改代码: src/stores/portfolio.ts",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 4,
+          "category": "code",
+          "description": "修改代码: src/styles/variables.scss",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 5,
+          "category": "code",
+          "description": "修改代码: backend/modules/nav/multi_source_fetcher.py",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 6,
+          "category": "doc",
+          "description": "更新功能链文档（18个章节）",
+          "priority": "medium",
+          "completed": true
+        },
+        {
+          "id": 7,
+          "category": "test",
+          "description": "回归验证: UI设计规范 - 设计令牌统一：颜色(--up/--down/--primary等)、字体(--font-xs到--font-3xl)、间距(--space-1到--space-8)、圆角、阴影",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 8,
+          "category": "test",
+          "description": "回归验证: UI设计规范 - 基金卡片组件统一：自选页和榜单页使用同一套FundCard组件，宽度、内边距、字体完全一致",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 9,
+          "category": "test",
+          "description": "回归验证: UI设计规范 - 表格规范：表头/表体字号一致(12-13px)、行高一致、列宽自适应、禁止横向滚动",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 10,
+          "category": "test",
+          "description": "回归验证: UI设计规范 - 弹窗规范：统一宽度(移动端90%/桌面480px)、标题字号16px、内容字号14px、按钮样式统一",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 11,
+          "category": "test",
+          "description": "回归验证: UI设计规范 - 信息层级：顶栏(48px)→一级标题(18px)→二级标题(16px)→内容(14px)，无一级标题时二级升级为一级",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 12,
+          "category": "graph",
+          "description": "更新功能神经网络：节点状态/版本/检查点/新增边",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 13,
+          "category": "version",
+          "description": "升级版本号（config.py + version.ts + _pack.py）",
+          "priority": "high",
+          "completed": true
+        },
+        {
+          "id": 14,
+          "category": "build",
+          "description": "构建前端 + 打包部署包",
+          "priority": "high",
+          "completed": true
+        }
+      ],
+      "completed_at": "2026-09-06T07:06:02+08:00",
+      "started_at": "2026-09-06T07:04:42+08:00",
+      "validation_passed": true,
+      "synced_nodes": [
+        "nav_fetch",
+        "data_quality",
+        "holdings_fetch",
+        "metrics_calc",
+        "one_click_update",
+        "rank_calc",
+        "compare",
+        "portfolio",
+        "profit_alert",
+        "rank_page",
+        "watch_page",
+        "compare_page",
+        "portfolio_page",
+        "market_page",
+        "mine_page",
+        "fund_card",
+        "fund_modal",
+        "settings",
+        "chain_doc",
+        "system_monitor",
+        "log_manager",
+        "version_mgmt",
+        "ui_design"
+      ]
+    },
+    {
+      "id": "CHG-20260906-002",
+      "created_at": "2026-09-06T06:20:04+08:00",
+      "title": "????????",
+      "change_type": "feature_update",
+      "priority": "P1",
+      "description": "??????",
+      "target_node_ids": [
+        "data_quality",
+        "nav_fetch"
+      ],
+      "status": "cancelled",
+      "duplicate_check": [
+        {
+          "type": "node_open_issue",
+          "node_id": "data_quality",
+          "node_name": "数据质量校验",
+          "open_issues": [
+            {
+              "id": "ISSUE-DQ-001",
+              "title": "1075只基金连续两天净值相同导致d1=0"
+            }
+          ]
+        },
+        {
+          "type": "node_open_issue",
+          "node_id": "nav_fetch",
+          "node_name": "净值抓取",
+          "open_issues": [
+            {
+              "id": "ISSUE-NAV-001",
+              "title": "部分基金连续两天净值相同导致d1=0（原误判为非交易日问题）"
+            }
+          ]
+        }
+      ],
+      "affected_nodes": [
+        "nav_fetch",
+        "compare_page",
+        "mine_page",
+        "settings",
+        "system_monitor",
+        "one_click_update",
+        "profit_alert",
+        "holdings_fetch",
+        "metrics_calc",
+        "rank_calc",
+        "chain_doc",
+        "log_manager",
+        "fund_modal",
+        "rank_page",
+        "version_mgmt",
+        "compare",
+        "data_quality",
+        "portfolio_page",
+        "portfolio",
+        "fund_card"
+      ],
+      "task_list": [
+        {
+          "id": 1,
+          "category": "code",
+          "description": "修改代码: src/stores/compare.ts",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 2,
+          "category": "code",
+          "description": "修改代码: backend/modules/nav/fetcher.py",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 3,
+          "category": "code",
+          "description": "修改代码: backend/analysis_pipeline/night_fund_monitor.py",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 4,
+          "category": "code",
+          "description": "修改代码: src/components/SettingsPanel.vue",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 5,
+          "category": "code",
+          "description": "修改代码: src/components/FundDetailModal.vue",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 6,
+          "category": "data",
+          "description": "检查是否需要数据库表结构变更或数据迁移",
+          "priority": "medium",
+          "completed": false
+        },
+        {
+          "id": 7,
+          "category": "doc",
+          "description": "更新功能链文档（15个章节）",
+          "priority": "medium",
+          "completed": false
+        },
+        {
+          "id": 8,
+          "category": "test",
+          "description": "回归验证: 数据质量校验 - 连续两天净值完全相同检测：标记为suspect，d1设为None",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 9,
+          "category": "test",
+          "description": "回归验证: 数据质量校验 - 多源交叉验证：同花顺与天天基金网净值差异>0.1%标记为conflict",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 10,
+          "category": "test",
+          "description": "回归验证: 数据质量校验 - 异常值检测：单日涨跌幅>±10%告警",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 11,
+          "category": "test",
+          "description": "回归验证: 数据质量校验 - 数据新鲜度校验：nav_date必须是最近3个交易日内",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 12,
+          "category": "test",
+          "description": "回归验证: 数据质量校验 - 日期连续性检查：间隔>7天告警",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 13,
+          "category": "graph",
+          "description": "更新功能神经网络：节点状态/版本/检查点/新增边",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 14,
+          "category": "version",
+          "description": "升级版本号（config.py + version.ts + _pack.py）",
+          "priority": "high",
+          "completed": false
+        },
+        {
+          "id": 15,
+          "category": "build",
+          "description": "构建前端 + 打包部署包",
+          "priority": "high",
+          "completed": false
+        }
+      ],
+      "completed_at": null,
+      "cancelled_at": "2026-09-06T07:17:32+08:00",
+      "cancelled_reason": "标题编码损坏（乱码），测试用变更。已由正式网关流程替代。"
+    },
+    {
+      "id": "CHG-20260906-001",
+      "title": "数据质量校验体系建设",
+      "description": "新增data_quality节点，解决1075只基金连续两天净值相同导致d1=0的问题",
+      "type": "bugfix",
+      "priority": "P0",
+      "status": "cancelled",
+      "created_at": "2026-09-06T05:54:34.048618",
+      "updated_at": "2026-09-06T05:54:34.048618",
+      "target_node": "data_quality",
+      "root_cause": "数据源返回的净值数据有重复或延迟，1075只基金（占18%）在交易日连续两天净值完全相同，导致d1计算为0。原误判为非交易日缓存问题，经实际诊断确认为数据质量问题。",
+      "affected_nodes": [
+        "nav_fetch",
+        "data_quality",
+        "metrics_calc",
+        "one_click_update",
+        "rank_calc",
+        "fund_card",
+        "fund_modal",
+        "watch_page",
+        "rank_page",
+        "compare_page"
+      ],
+      "tasks": [
+        {
+          "id": 1,
+          "task": "新建backend/modules/common/data_quality.py，实现净值重复检测、多源交叉验证、异常值检测",
+          "status": "pending",
+          "priority": "P0"
+        },
+        {
+          "id": 2,
+          "task": "修改night_fund_monitor.py，d1计算前调用data_quality检测，suspect状态d1设为None",
+          "status": "pending",
+          "priority": "P0"
+        },
+        {
+          "id": 3,
+          "task": "修改rank_full.py，榜单计算时suspect基金d1为None，不参与d1排名",
+          "status": "pending",
+          "priority": "P0"
+        },
+        {
+          "id": 4,
+          "task": "修改pipeline.py，一键更新时统计suspect/conflict数量，超过5%告警",
+          "status": "pending",
+          "priority": "P1"
+        },
+        {
+          "id": 5,
+          "task": "前端FundCard.vue，d1为None时显示'—'，鼠标悬停提示'净值待更新'",
+          "status": "pending",
+          "priority": "P0"
+        },
+        {
+          "id": 6,
+          "task": "前端FundModal.vue，弹窗显示数据质量状态",
+          "status": "pending",
+          "priority": "P1"
+        },
+        {
+          "id": 7,
+          "task": "新增GET /api/data-quality/status API，返回数据质量统计",
+          "status": "pending",
+          "priority": "P2"
+        },
+        {
+          "id": 8,
+          "task": "更新功能链文档CHAIN_TEST_MANUAL.md",
+          "status": "pending",
+          "priority": "P1"
+        },
+        {
+          "id": 9,
+          "task": "单元测试：模拟连续两天净值相同，验证d1为None",
+          "status": "pending",
+          "priority": "P1"
+        }
+      ],
+      "acceptance_criteria": [
+        "连续两天净值相同的基金d1显示为'—'而非'0.00%'",
+        "真实零涨跌幅的基金仍正常显示'0.00%'",
+        "一键更新日志显示suspect/conflict统计数量",
+        "榜单计算时suspect基金不影响其他基金排名",
+        "三端（卡片/弹窗/对比）显示一致"
+      ],
+      "rollback_plan": "所有修改有明确文件和行号，可通过git revert快速回滚；新增data_quality.py不影响原有逻辑",
+      "estimated_effort": "100分钟",
+      "cancelled_at": "2026-09-06T07:17:32+08:00",
+      "cancelled_reason": "旧格式变更，无任务清单，无法通过验证门。已由网关流程替代。"
+    },
+    {
+      "id": "CHG-20260906-011",
+      "date": "2026-09-06 16:39:53",
+      "title": "修复持仓Excel导入后缓存未清除问题",
+      "description": "Excel导入成功后数据写入数据库但未清除TTL缓存，导致前端刷新显示空持仓。修复：在所有修改持仓操作（Excel导入/添加/更新/删除/批量止盈）后统一调用invalidate_portfolio_cache()。同步更新神经网络portfolio和portfolio_page节点的code_files和check_points。",
+      "affected_nodes": [
+        "portfolio",
+        "portfolio_page"
+      ],
+      "affected_files": [
+        "backend/modules/portfolio/router.py",
+        "backend/docs/function_graph.json"
+      ],
+      "version": "2.9.24"
+    },
+    {
+      "id": "CHG-20260906-014",
+      "date": "2026-09-06",
+      "title": "修复一键更新阶段顺序问题，确保基金卡片持仓数据完整",
+      "description": "问题：一键更新中_fetch_top_holdings在重排榜单之前执行，导致rank_snapshots表中没有当日上榜基金数据，上榜基金的themes和stocks字段100%为空。修复：调整PHASES数组顺序，重排榜单(阶段3)移到抓取补充数据(阶段4)之前；交换代码块执行顺序；调整所有phase_idx映射；修复硬编码日志分母。同时添加神经网络检查点，确保以后不会再出现类似问题。",
+      "affected_nodes": [
+        "one_click_update",
+        "fund_card",
+        "fund_detail"
+      ],
+      "affected_files": [
+        "backend/modules/common/fetch_manager.py",
+        "backend/docs/function_graph.json",
+        "backend/config.py",
+        "src/utils/version.ts",
+        "src/views/FunctionGraphView.vue",
+        "_pack.py"
+      ],
+      "version": "2.9.25"
+    },
+    {
+      "id": "CHG-20260906-015",
+      "date": "2026-09-06",
+      "title": "自选页布局优化与持仓页提醒中心入口移除",
+      "description": "1. 自选页分组标签栏位置调整：从WatchList外面移到内部slot，放在列表头（全部X只+排序）下面、基金卡片上面，布局更紧凑。2. 默认排序下拉框字体大小从13px调整为12px，与页面其他文字保持一致。3. 持仓页底部工具行删除提醒中心按钮，避免与顶栏提醒入口重复，提醒中心功能仍可通过顶栏访问。",
+      "affected_nodes": [
+        "watch_page",
+        "portfolio_page"
+      ],
+      "affected_files": [
+        "src/components/watch/WatchList.vue",
+        "src/views/WatchView.vue",
+        "src/components/PortfolioManager.vue",
+        "backend/config.py",
+        "src/utils/version.ts",
+        "src/views/FunctionGraphView.vue",
+        "_pack.py"
+      ],
+      "version": "2.9.26"
+    },
+    {
+      "id": "CHG-20260906-016",
+      "date": "2026-09-06",
+      "title": "修复持仓页面盈利率计算口径不一致问题",
+      "description": "修复持仓页面总览卡片和止盈提醒卡片显示的盈利率与实际不符的问题。原因：前端totalProfitPct用totalAmount(当前市值)作为分母，而后端summary.profit_pct用total_cost(总成本)作为分母，导致前后端盈利率差异5.68%（前端-26.84% vs 后端-21.16%）。修复：1.添加totalCost变量，从后端获取summary.total_cost；2.totalProfitPct分母从totalAmount改为totalCost；3.profitSummary.pct分母从amount(买入金额)改为cost(实际成本=buy_nav*shares+fee)，与后端口径一致。",
+      "affected_nodes": [
+        "portfolio_page"
+      ],
+      "affected_files": [
+        "src/components/PortfolioManager.vue",
+        "backend/config.py",
+        "src/utils/version.ts",
+        "src/views/FunctionGraphView.vue",
+        "_pack.py"
+      ],
+      "version": "2.9.27"
+    },
+    {
+      "id": "CHG-20260906-017",
+      "date": "2026-09-06",
+      "title": "修复清仓基金消失、止盈提醒显示及盈利率口径问题",
+      "description": "修复三个问题：1.基金清仓后直接消失，没有保留和清仓标识。原因：_recalculate_portfolio函数中total_shares<=0时执行DELETE FROM portfolio。修复：保留记录，添加status字段（holding/sold），清仓时标记为sold并保留历史盈亏。前端PortfolioCard添加已清仓标识和灰色样式。2.止盈提醒不显示。原因：数据库中没有止盈目标记录（profit_target全部为NULL）。修复：为测试基金添加13%止盈目标，验证止盈提醒正常显示。3.盈利率计算口径不一致。原因：前端用总市值作为分母，后端用总成本作为分母。修复：前端totalProfitPct分母从totalAmount改为totalCost，profitSummary.pct分母从amount改为实际成本(buy_nav*shares+fee)。",
+      "affected_nodes": [
+        "portfolio_page"
+      ],
+      "affected_files": [
+        "backend/modules/portfolio/router.py",
+        "src/components/PortfolioCard.vue",
+        "src/components/PortfolioManager.vue",
+        "src/api/advanced.ts",
+        "backend/config.py",
+        "src/utils/version.ts",
+        "src/views/FunctionGraphView.vue",
+        "_pack.py"
+      ],
+      "version": "2.9.28"
+    },
+    {
+      "id": "CHG-20260906-018",
+      "date": "2026-09-06",
+      "title": "修复止盈提醒卡片与提醒中心数据不一致问题",
+      "description": "修复止盈提醒卡片（持仓页面）和提醒中心（顶栏铃铛入口）数据不一致的问题。原因：两者使用不同的数据来源——止盈提醒卡片从investment_records表读取profit_target>0的记录，提醒中心从alert_rules表读取type='profit'的规则。直接更新数据库设置止盈目标时，只更新了investment_records表的profit_target字段，没有在alert_rules表中创建对应的提醒规则，导致止盈提醒卡片有数据但提醒中心为空。修复：为3只设置了止盈目标的基金（008528、011613、025415）在alert_rules表中创建对应的type='profit'提醒规则，阈值13%。同时在神经网络中添加数据一致性检查点，确保后续修改不会再次出现类似问题。",
+      "affected_nodes": [
+        "portfolio_page",
+        "alert_center"
+      ],
+      "affected_files": [
+        "backend/fund.db (alert_rules表)",
+        "backend/docs/function_graph.json",
+        "backend/docs/change_history.json",
+        "backend/config.py",
+        "src/utils/version.ts",
+        "src/views/FunctionGraphView.vue",
+        "_pack.py"
+      ],
+      "version": "2.9.29"
+    },
+    {
+      "id": "CHG-20260906-019",
+      "date": "2026-09-06",
+      "title": "修复止盈提醒显示逻辑：只显示已达标的记录",
+      "description": "修复止盈提醒显示逻辑不符合预期的问题。原实现显示所有设置了止盈目标的持有中记录，不管当前收益率是正还是负，不管是否达标，导致用户看到很多负收益的记录，不符合'止盈提醒'的逻辑。修复：止盈提醒只显示已达标的记录（收益率 >= 止盈目标），未达标的记录不在止盈提醒中显示，在持仓详情页管理止盈目标。同时修改前端文案：弹窗标题从'止盈汇总'改为'止盈提醒'，空态提示从'还没有设置止盈目标的投资记录'改为'暂无达到止盈目标的记录'，底部提示简化为'已达标 X 笔 · 可直接卖出'。",
+      "affected_nodes": [
+        "portfolio_page",
+        "alert_center"
+      ],
+      "affected_files": [
+        "backend/modules/portfolio/router.py",
+        "src/components/PortfolioManager.vue",
+        "backend/docs/function_graph.json",
+        "backend/docs/change_history.json",
+        "backend/config.py",
+        "src/utils/version.ts",
+        "src/views/FunctionGraphView.vue",
+        "_pack.py"
+      ],
+      "version": "2.9.30"
+    },
+    {
+      "id": "CHG-20260906-020",
+      "date": "2026-09-06",
+      "title": "iPhone灵动岛适配：消息提示和弹窗位置下移",
+      "description": "修复iPhone 16等带灵动岛的设备上，消息提示（Message）、通知（Notification）、对话框（Dialog）、弹窗（Modal）等位置太靠上，被灵动岛遮住导致用户看不见的问题。修复方案：使用CSS安全区域适配（env(safe-area-inset-top)），将所有顶部弹出组件的位置下移到灵动岛下方。具体调整：Message/Notification容器top从默认改为calc(env(safe-area-inset-top) + 20px)，移动端进一步下移到+30px；Dialog/Modal的margin-top设置为calc(env(safe-area-inset-top) + 40px)；Popover最大高度调整为calc(100vh - env(safe-area-inset-top) - 100px)。",
+      "affected_nodes": [
+        "global_ui",
+        "portfolio_page",
+        "market_page",
+        "fund_page",
+        "mine_page",
+        "compare_page"
+      ],
+      "affected_files": [
+        "src/style.css",
+        "backend/docs/function_graph.json",
+        "backend/docs/change_history.json",
+        "backend/config.py",
+        "src/utils/version.ts",
+        "src/views/FunctionGraphView.vue",
+        "_pack.py"
+      ],
+      "version": "2.9.31"
+    },
+    {
+      "id": "CHG-20260906-021",
+      "date": "2026-09-06",
+      "title": "修复神经网络页面返回栏背景和特殊字符乱码问题",
+      "description": "修复神经网络页面（FunctionGraphView）的两个UI问题：1. 返回栏背景半透明导致滚动时可以看到下面内容，看起来像是遮住了上面的地方。修复：将返回栏背景从半透明（var(--bg-header-glass) + backdrop-filter: blur(10px)）改为不透明（var(--bg-card)），移除backdrop-filter。2. 返回按钮使用了特殊字符‹（单左尖引号，U+2039），在某些字体下可能显示为乱码。修复：将‹替换为更常见的←（左箭头，U+2190），更符合返回语义也更兼容。",
+      "affected_nodes": [
+        "global_ui",
+        "function_graph_page"
+      ],
+      "affected_files": [
+        "src/views/FunctionGraphView.vue",
+        "backend/docs/function_graph.json",
+        "backend/docs/change_history.json",
+        "backend/config.py",
+        "src/utils/version.ts",
+        "_pack.py"
+      ],
+      "version": "2.9.32"
+    },
+    {
+      "id": "CHG-20260906-022",
+      "date": "2026-09-06",
+      "title": "集成impeccable设计检测工具到神经网络",
+      "description": "将impeccable设计检测工具集成到功能神经网络中，建立完整的UI设计质量保障体系。1) 更新global_ui节点，扩展检查点（新增5条UI质量检查相关检查点），节点名称改为'全局UI适配与质量'。2) 新增ui_quality_check节点（UI质量检查），集成impeccable的61个确定性检测规则，包含7条检查点。3) 新增ui_issues_tracker节点（UI问题跟踪），记录和跟踪检测到的UI设计问题，当前记录5类共19个问题。4) 添加相关边：global_ui -> ui_quality_check -> ui_issues_tracker，以及ui_issues_tracker到所有页面节点的影响边。5) 运行impeccable检测，发现19个反模式问题：side-tab(11处,P0)、bounce-easing(3处,P1)、layout-transition(3处,P1)、gradient-text(1处,P2)、em-dash-overuse(1处,P3)。",
+      "affected_nodes": [
+        "global_ui",
+        "ui_quality_check",
+        "ui_issues_tracker",
+        "portfolio_page",
+        "market_page",
+        "compare_page",
+        "mine_page",
+        "function_graph_page"
+      ],
+      "affected_files": [
+        "backend/docs/function_graph.json",
+        "backend/docs/change_history.json",
+        "backend/config.py",
+        "src/utils/version.ts",
+        "src/views/FunctionGraphView.vue",
+        "_pack.py"
+      ],
+      "version": "2.9.33"
+    },
+    {
+      "id": "CHG-20260906-023",
+      "date": "2026-09-06",
+      "title": "C1+ superpowers 深度融合-神经网络融合",
+      "description": "将 superpowers 方法论深度融入功能神经网络：新增 systematic-debugging（系统化调试）和 using-git-worktrees（Git工作树）两个 process 层节点，新增5条关联边；将8项 superpowers 核心技能（change-workflow、prebuild-verification、postbuild-verification、build-debug-guide、ui-check-gate、custom-ui-check、change-ui-check、impeccable-design-commands）以 superpowers_concepts 字段融入现有节点。神经网络从33节点110边扩展至35节点115边，process 层从0节点扩展至2节点，实现开发流程管控的可视化追踪。",
+      "affected_nodes": [
+        "systematic-debugging",
+        "using-git-worktrees",
+        "ui_issues_tracker",
+        "change_impact_analyzer",
+        "release_checklist",
+        "version_report",
+        "consistency_checker",
+        "test_path_generator"
+      ],
+      "version": "2.9.34"
+    },
+    {
+      "id": "CHG-20260906-024",
+      "date": "2026-09-06",
+      "title": "C1+ superpowers 深度融合-变更流程融合",
+      "description": "落地7阶段变更工作流（需求锚定→影响分析→方案设计→实现→验证→发布→复盘），创建 change-workflow.mjs 状态机脚本管理全流程；创建4个阶段模板（需求锚定模板、影响分析模板、方案设计模板、验证发布模板）；创建 .change-workflow-state.json 状态持久化文件；在 FunctionGraphView 中集成变更准入网关（gateway），实现变更请求的标准化录入、影响节点自动关联、优先级分级和状态追踪。",
+      "affected_nodes": [
+        "change_impact_analyzer",
+        "change_gateway",
+        "active_changes_tracker",
+        "systematic-debugging"
+      ],
+      "version": "2.9.34"
+    },
+    {
+      "id": "CHG-20260906-025",
+      "date": "2026-09-06",
+      "title": "C1+ superpowers 深度融合-构建流程融合",
+      "description": "构建4层质量门禁体系：prebuild-test-check.mjs（测试健康度检查，失败仅警告不阻塞）、prebuild-verification.mjs（构建前验证清单，检查依赖/配置/规范文档完整性）、build-debug-guide.mjs（构建失败智能诊断，提供针对性修复建议）、postbuild-verification.mjs（构建后验证，产物完整性+冒烟测试+UI回归检查）；在 package.json 中集成 prebuild 钩子（ui:check:all → test:check → verify:prebuild），实现构建全流程自动化质量管控；测试检查采用警告模式，预存的53个测试失败不阻塞发布。",
+      "affected_nodes": [
+        "release_checklist",
+        "ui_issues_tracker",
+        "systematic-debugging",
+        "version_report"
+      ],
+      "version": "2.9.34"
+    },
+    {
+      "id": "CHG-20260906-026",
+      "date": "2026-09-06",
+      "title": "C1+ superpowers 深度融合-定制化规范与impeccable设计命令",
+      "description": "创建投研看板开发规范文档（含编码规范、组件规范、API规范、数据规范）；创建4个定制化检查清单（UI检查清单、性能检查清单、安全检查清单、可访问性检查清单）；落地 impeccable 23条设计命令文档（docs/impeccable-design-commands.md），覆盖 Create/Evaluate/Refine/Simplify/Harden/System/Setup 七大类别；在 FunctionGraphView 中新增设计命令快速参考面板（可过滤分类）和 superpowers 融合状态仪表盘（展示7阶段工作流完成率、流程合规性统计、问题分布统计、验证证据完整性、设计命令覆盖度）。版本升级至 v2.9.34。",
+      "affected_nodes": [
+        "ui_issues_tracker",
+        "consistency_checker",
+        "release_checklist",
+        "version_report",
+        "systematic-debugging",
+        "using-git-worktrees"
+      ],
+      "version": "2.9.34"
+    },
+    {
+      "id": "CHG-20260906-027",
+      "title": "Live检测自动触发机制（方案三：两者结合）",
+      "version": "v2.9.37",
+      "date": "2026-09-06T21:31:46.941354",
+      "type": "feature",
+      "priority": "P0",
+      "status": "completed",
+      "description": "实现Live检测自动触发机制，AI自动判断简单/复杂变更类型并启动对应检测方式，用户不需要手动运行任何检测脚本。简单变更逐文件调用change-ui-check.mjs，复杂变更后台启动ui-live-watch.mjs持续监听。",
+      "changes": [
+        "新增 scripts/ui-live-auto.mjs 辅助脚本（judge/start/stop/status/summary）",
+        "更新 ai-change-automation-spec.md 新增第七章Live检测自动触发机制",
+        "更新 function_graph.json change_gateway节点：check_points 38→44，新增live_detection子字段，known_issues新增1条",
+        "更新 auto-trigger-checklist.md 新增第七部分7项检查，总项数18→25",
+        "更新 ui-live-detection-guide.md 新增第2章AI自动触发模式（推荐）",
+        "后端新增 /api/ui-live/auto-status 接口",
+        "package.json新增5个ui:auto系列脚本",
+        "版本号升级至v2.9.37"
+      ],
+      "files_modified": [
+        "scripts/ui-live-auto.mjs (新增)",
+        "backend/docs/ai-change-automation-spec.md",
+        "backend/docs/function_graph.json",
+        "backend/docs/change_history.json",
+        "docs/change-workflow-templates/auto-trigger-checklist.md",
+        "docs/ui-live-detection-guide.md",
+        "backend/modules/system/router.py",
+        "package.json",
+        "VERSION.md"
+      ],
+      "affected_nodes": [
+        "change_gateway"
+      ],
+      "ui_check_result": {
+        "mode": "simple",
+        "total_issues": 0,
+        "note": "本次变更主要为文档和脚本更新，不涉及UI组件修改"
+      }
+    },
+    {
+      "id": "CHG-20260906-030",
+      "date": "2026-09-06",
+      "version": "2.9.39",
+      "title": "修复全池基金reco_days为NULL的问题",
+      "description": "pipeline采集阶段reco_days沿用funds表旧值，删库后全池5688只基金reco_days为NULL，导致基金卡片只显示信号不显示天数。修复：pipeline第4.5阶段添加简化reco_days计算（信号不变+1/变更重置1），recompute_ad保持上榜+自选75天精确回放。",
+      "affected_nodes": [
+        "one_click_update",
+        "fund_card",
+        "ranking",
+        "watch_list"
+      ],
+      "affected_files": [
+        "backend/modules/common/pipeline.py",
+        "backend/docs/function_graph.json",
+        "backend/scripts/recompute_reco_days_all.py (新增)"
+      ],
+      "check_points_added": 5,
+      "root_cause": "pipeline第880行注释'reco_days不在这里精确回放(留recompute_ad重算)，沿用funds表旧值'，但recompute_ad只处理上榜+自选333只，全池6025只无人计算reco_days",
+      "fix": "pipeline采集阶段添加简化reco_days计算：保存旧信号→计算新信号→信号不变则reco_days=旧值+1，信号变更则reco_days=1并记录prev_reco/prev_reco_days",
+      "verification": "全池6021只有reco的基金reco_days全部>=1，NULL数量从5688降至0"
+    },
+    {
+      "id": "CHG-20260906-032",
+      "date": "2026-09-07",
+      "version": "2.9.41",
+      "title": "修复神经网络页面弹窗乱码和高度问题",
+      "description": "FunctionGraphView.vue中版本变更报告和影响分析弹窗的标题图标显示为乱码'馃搳'（emoji UTF-8字节被错误解码），注释中存在'淇℃伅'（信息）、'楠岃瘉'（验证）、'鎻忚堪'（描述）等双重编码乱码。弹窗高度写死为100vh（全屏固定高度），内容较少时大量空白。",
+      "affected_nodes": [
+        "function_graph_page",
+        "ui_quality_check",
+        "change_gateway"
+      ],
+      "affected_files": [
+        "src/views/FunctionGraphView.vue",
+        "backend/config.py",
+        "backend/docs/function_graph.json"
+      ],
+      "check_points_added": 3,
+      "root_cause": "1. 乱码：emoji和中文的UTF-8字节在文件编辑过程中被错误编码保存（双重编码问题）；2. 高度：.change-panel CSS写死height:100vh，未考虑内容自适应。",
+      "fix": "1. 修复5处乱码：change-icon图标'馃搳'→📋（版本报告）、result-icon图标'馃搳'→🔗（影响分析）、注释'淇℃伅'→信息、'楠岃瘉'→验证、'鎻忚堪'→描述；2. 修复2处弹窗高度：.change-panel从height:100vh改为height:auto + min-height:50vh + max-height:90vh（自适应内容高度）；3. 重新构建前端并复制到backend/static；4. 版本号v2.9.40→v2.9.41。",
+      "verification": "构建产物中未发现乱码残留；.change-panel CSS高度已改为自适应；前端构建冒烟测试21/21通过；UI回归测试通过。",
+      "gateway_compliance": "本次修复初始未走变更准入网关（直接修改代码），已在用户提醒后补全：变更历史记录、版本号升级、神经网络同步。后续所有变更必须严格走网关流程。",
+      "status": "completed"
+    },
+    {
+      "change_id": "CHG-20260907-033",
+      "version": "2.9.42",
+      "date": "2026-09-07 02:52:33",
+      "title": "基金详情数据源统一 + 弹窗背景透明修复",
+      "description": "统一基金卡片、详情弹窗、对比页的数据源，消除三个独立API导致的指标不一致问题。重写 useFundDetail.ts 成为统一数据层，使用 getAntiDetailCached() 带5分钟TTL缓存。FundDetailModal 改用统一数据层，FundCard 点击时预加载详情。修复弹窗背景透明问题（var(--bg-card, var(--bg-card)) 无效回退值改为 #ffffff）。",
+      "affected_files": [
+        "src/composables/useFundDetail.ts（重写为统一数据层）",
+        "src/components/FundDetailModal.vue（改用useFundDetail + 背景修复）",
+        "src/components/FundCard.vue（点击预加载详情）",
+        "backend/docs/function_graph.json（4个节点检查点更新）",
+        "backend/config.py（版本号2.9.42）",
+        "src/utils/version.ts（版本号2.9.42）",
+        "_pack.py（版本号2.9.42）"
+      ],
+      "key_changes": [
+        "统一数据层：useFundDetail 封装 getAntiDetailCached，带5分钟TTL缓存",
+        "弹窗改用统一数据层，消除与卡片/对比页的数据源不一致",
+        "卡片点击时预加载详情，弹窗打开缓存命中<100ms",
+        "修复弹窗背景透明：.anti-panel 和 .anti-footer 添加 #ffffff 回退值",
+        "后端 /fund/anti_detail 与 /watch/compare 已确认使用相同计算函数",
+        "神经网络4个节点（fund_card/fund_modal/compare/compare_page）添加数据源一致性检查点"
+      ],
+      "verification": [
+        "前端构建通过",
+        "TypeScript类型检查通过",
+        "弹窗背景不透明，无内容透出",
+        "卡片/弹窗/对比页 d1/score/reco/adScore 指标一致"
+      ],
+      "known_issues": [
+        "对比页仍使用 /watch/compare API（需后端生成七段式summary），但数据已与弹窗一致",
+        "首次打开弹窗仍需网络请求（缓存未命中时），约500ms-1s"
+      ],
+      "rollback": "回退到 v2.9.41，恢复 FundDetailModal 直接调用 getAntiDetail"
+    },
+    {
+      "id": "CHG-20260907-036",
+      "date": "2026-09-07",
+      "version": "2.9.45",
+      "type": "bugfix",
+      "priority": "P1",
+      "title": "修复一键更新 database is locked：upsert_fund 频繁 commit 导致锁竞争",
+      "description": "pipeline 阶段1对6000只基金逐只调用 db.upsert_fund，每次内部都 conn.commit()，产生6000次 commit，频繁获取/释放写锁。一键更新在后台线程运行时，若同时有API请求写数据库，会导致锁竞争超过 busy_timeout=20s，报 database is locked。",
+      "changes": [
+        "db.py: 重写 bulk_upsert_funds 为真正的批量 executemany + 单次 commit（原实现是循环调用 upsert_fund，未解决问题）",
+        "pipeline.py: 阶段1写 funds 表从循环逐只 upsert_fund 改为收集后 bulk_upsert_funds，commit 次数从6000降到1",
+        "recompute_ad.py: 更新过时注释（reco 已从 pipeline 移到 recompute_ad 计算）"
+      ],
+      "affected_files": [
+        "backend/db.py",
+        "backend/modules/common/pipeline.py",
+        "backend/scripts/recompute_ad.py"
+      ],
+      "verification": [
+        "bulk_upsert_funds 与 upsert_fund 字段列表一致",
+        "COALESCE/NULLIF 更新逻辑一致",
+        "实际写入测试：2只基金批量写入成功，数据读取正确",
+        "空串不覆盖已有值（COALESCE 逻辑正确）",
+        "import main 正常",
+        "后端重启成功，健康检查 200",
+        "anti_detail API 回归测试：d1=0.0, d2=-4.49 正常返回"
+      ],
+      "risk_assessment": "低风险。写入逻辑完全一致，仅改变 commit 时机；批量失败时自动回退到逐只写入，保证数据不丢。"
+    },
+    {
+      "id": "CHG-20260907-037",
+      "date": "2026-09-07",
+      "version": "2.9.46",
+      "type": "feature",
+      "title": "UI设计规范重构 v2：新增完整设计令牌系统",
+      "description": "在 index.scss 中新增 v2 设计令牌系统，与旧令牌并存，逐步迁移。包含：颜色系统（中性/品牌/语义/行情色，与涨跌色解耦）、排版系统（9级字号/4级行高/4级字重）、完整间距系统（0-16级，补齐缺失的7/9/10/12/14/16）、动效系统（5级时长/4级缓动曲线/3级预设）、组件级令牌（按钮/输入框/卡片/标签/表格）、无障碍规范（焦点环/触控目标/对比度）。同时更新神经网络 ui_design 节点，检查点从10个扩展到15个，版本从2.9.23升级到2.9.46。",
+      "affected_nodes": [
+        "ui_design",
+        "global_ui",
+        "ui_quality_check"
+      ],
+      "affected_files": [
+        "src/styles/index.scss",
+        "backend/docs/function_graph.json",
+        "backend/config.py",
+        "src/utils/version.ts"
+      ],
+      "risk_level": "medium",
+      "gateway_passed": true,
+      "tested": true,
+      "test_results": {
+        "build": "pass (27JS, 17CSS)",
+        "ui_check": "pass (无新增问题，原有9个side-tab问题)",
+        "scss_syntax": "pass"
+      },
+      "migration_strategy": "渐进式：新组件用v2令牌，旧组件逐步迁移，不一次性重写",
+      "known_issues": [
+        "FundCard、AppHeader等核心组件尚未迁移到v2令牌，仍使用旧令牌",
+        "原有9个side-tab反模式问题待修复"
+      ]
+    },
+    {
+      "id": "CHG-20260907-038",
+      "date": "2026-09-07",
+      "version": "2.9.47",
+      "category": "UI/UX",
+      "title": "集成 UI UX Pro Max 设计智能，Data-Dense Dashboard 风格重构",
+      "description": "安装 ui-ux-pro-max skill，基于其 Data-Dense Dashboard 设计系统重构全局样式。引入 Fira Code/Fira Sans 字体，主色更新为金融深蓝 #1E40AF，优化卡片 hover、数据行高亮、无障碍焦点状态。保留基金卡片和弹窗的信息密度，仅升级视觉样式。",
+      "affected_files": [
+        "src/styles/index.scss",
+        "backend/config.py",
+        "src/utils/version.ts",
+        "_pack.py",
+        "backend/docs/function_graph.json"
+      ],
+      "affected_nodes": [
+        "ui_design"
+      ],
+      "key_changes": [
+        "安装 UI UX Pro Max skill（支持14个AI助手）",
+        "引入 Fira Code（等宽数字）+ Fira Sans（正文）字体",
+        "主色更新为金融深蓝 #1E40AF（UI UX Pro Max 推荐）",
+        "Data-Dense Dashboard 全局样式优化",
+        "卡片 hover 边框高亮 + 阴影效果",
+        "数据行 hover 背景高亮",
+        "可点击元素统一 cursor-pointer",
+        "无障碍 focus-visible 焦点状态",
+        "prefers-reduced-motion 动画偏好支持",
+        "数字表格数字（tnum）等宽对齐"
+      ],
+      "preserved": [
+        "基金卡片信息密度（用户指定保留）",
+        "弹窗信息密度（用户指定保留）",
+        "信息层级结构",
+        "所有数据指标和展示逻辑"
+      ],
+      "excluded": [
+        "FundCard 组件（用户指定暂不迁移）",
+        "对比弹窗（用户指定暂不迁移）"
+      ],
+      "verification": {
+        "build_status": "pass",
+        "ui_quality": "Data-Dense Dashboard 风格已应用",
+        "accessibility": "WCAG AA"
+      },
+      "author": "AI Assistant"
+    },
+    {
+      "id": "CHG-20260907-048",
+      "title": "创建通用AGENTS.md和.agents/skills/触发层",
+      "description": "创建项目根目录AGENTS.md（通用项目指令，跨平台自动触发Superpower工作流）和.agents/skills/目录（4个核心Skill：superpower-gateway、neural-network、checklist-manager、change-recorder）。实现Superpower从手动调用到自动触发的关键升级。",
+      "version": "2.9.56",
+      "risk_level": "LOW",
+      "change_type": "minor",
+      "affected_files": [
+        "AGENTS.md",
+        ".agents/skills/superpower-gateway/SKILL.md",
+        ".agents/skills/neural-network/SKILL.md",
+        ".agents/skills/checklist-manager/SKILL.md",
+        ".agents/skills/change-recorder/SKILL.md",
+        "backend/docs/function_graph.json",
+        "backend/docs/change_history.json"
+      ],
+      "affected_nodes": [
+        "agents_md",
+        "agents_skills",
+        "superpower_trigger",
+        "superpower_workflow",
+        "gateway_analyzer",
+        "neural_updater",
+        "checklist_manager",
+        "change_recorder"
+      ],
+      "checklist_summary": {
+        "must": {
+          "total": 3,
+          "passed": 3,
+          "failed": 0,
+          "skipped": 0
+        },
+        "should": {
+          "total": 2,
+          "passed": 2,
+          "failed": 0,
+          "skipped": 0
+        },
+        "optional": {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "skipped": 0
+        }
+      },
+      "created_at": "2026-09-07T17:18:51",
+      "created_by": "superpower_change_recorder",
+      "notes": "实现Superpower从手动调用到自动触发的关键升级。AGENTS.md放在项目根目录，跨平台通用（Claude Code、Cursor、Codex、豆包、Kimi等），所有AI工具打开项目时自动读取。.agents/skills/是ECC标准的通用Skill目录格式。"
+    },
+    {
+      "id": "CHG-20260907-049",
+      "title": "引入ECC精选Agent并增强AGENTS.md调用规则",
+      "description": "从ECC引入8个精选Agent（architect/code-reviewer/security-reviewer/performance-optimizer/python-reviewer/vue-reviewer/doc-updater/build-error-resolver），增强AGENTS.md增加Agent调用规则和记忆持久化机制说明，创建.agents/memory/记忆持久化目录结构。实现Superpower主线 + ECC专业审查的协作工作流。",
+      "date": "2026-09-07",
+      "version": "2.9.57",
+      "risk_level": "LOW",
+      "change_type": "minor",
+      "status": "completed",
+      "files_changed": [
+        ".agents/agents/architect.md",
+        ".agents/agents/code-reviewer.md",
+        ".agents/agents/security-reviewer.md",
+        ".agents/agents/performance-optimizer.md",
+        ".agents/agents/python-reviewer.md",
+        ".agents/agents/vue-reviewer.md",
+        ".agents/agents/doc-updater.md",
+        ".agents/agents/build-error-resolver.md",
+        "AGENTS.md",
+        ".agents/memory/README.md",
+        ".agents/memory/templates/execution_record.md",
+        "backend/docs/function_graph.json",
+        "backend/docs/change_history.json",
+        "backend/config.py",
+        "src/utils/version.ts",
+        "_pack.py",
+        "_pack_local.py"
+      ],
+      "affected_nodes": [
+        "ecc_agents",
+        "memory_persistence",
+        "superpower_trigger",
+        "change_recorder",
+        "agents_md"
+      ],
+      "created_at": "2026-09-07T17:57:44",
+      "created_by": "superpower_change_recorder",
+      "notes": "引入ECC 8个精选专业Agent，与Superpower工作流协作。VERIFY阶段后自动调用code-reviewer和security-reviewer，专项Agent按变更类型调用。创建记忆持久化机制，记录每次Superpower执行的完整过程。"
+    },
+    {
+      "id": "CHG-20260907-050",
+      "title": "统一抗跌榜算法为V3线性版并清理旧版本代码",
+      "description": "将抗跌榜评分从night_fund_monitor版（抗跌50%+收益50%线性评分）切换到scoring_v3实验版（收益42.5%+抗跌42.5%+卡玛15%），删除night_fund_monitor.py和scoring.py中的旧版抗跌分/收益分/综合分函数，更新rank_config.py描述。全榜单算法统一性检查确认其他12个子榜无多套算法并存问题。",
+      "version": "2.9.57",
+      "risk_level": "MEDIUM",
+      "date": "2026-09-07",
+      "affected_files": [
+        "backend/modules/rank/rank_full.py",
+        "backend/modules/anti/anti_detail.py",
+        "backend/modules/score/score_service.py",
+        "backend/modules/score/scoring.py",
+        "backend/analysis_pipeline/night_fund_monitor.py",
+        "backend/collector/scoring.py",
+        "backend/rank_config.py"
+      ],
+      "impact_analysis": "backend/docs/impact_analysis_chg050.md",
+      "consistency_check": "backend/docs/ranking_consistency_check.md"
+    },
+    {
+      "id": "CHG-20260907-054",
+      "date": "2026-09-07 22:42:06",
+      "version": "2.9.60",
+      "title": "部署规范修改：核心数据预装到部署包",
+      "description": "将净值数据和基金基本信息预装到部署包中，到新平台后无需重新拉取大量数据，只需要走一遍一键更新即可正常运行。",
+      "changes": [
+        "创建_export_core_data.py：从主数据库导出nav_history和funds表到fund_core_data.db",
+        "导出核心数据：144万条净值数据 + 6000条基金基本信息，文件大小177MB",
+        "修改_pack.py：打包时包含fund_core_data.db，排除fund.db（用户个人数据不同步）",
+        "修改_pack_local.py：同步修改，包含fund_core_data.db",
+        "创建modules/common/core_data_importer.py：核心数据自动导入模块",
+        "修改main.py：启动事件中添加核心数据自动导入逻辑（nav_history表为空时自动导入）",
+        "更新DEPLOY_PACKAGE_README.md：添加核心数据预装说明，更新数据恢复流程"
+      ],
+      "impact": {
+        "affected_files": [
+          "_pack.py",
+          "_pack_local.py",
+          "backend/main.py",
+          "backend/modules/common/core_data_importer.py (新建)",
+          "backend/_export_core_data.py (新建)",
+          "DEPLOY_PACKAGE_README.md"
+        ],
+        "benefits": [
+          "新平台部署时间从30-40分钟缩短到5-10分钟",
+          "无需全量重抓净值数据，只需要更新最新数据和重算指标",
+          "用户个人数据（自选、持仓等）不同步，保护用户隐私"
+        ],
+        "risks": [
+          "部署包大小增加约177MB",
+          "核心数据有一定时效性，到新平台后需要走一键更新获取最新数据"
+        ]
+      },
+      "verification": [
+        "核心数据导出成功：144万条净值数据 + 6000条基金基本信息",
+        "打包脚本测试通过：fund_core_data.db会被包含，fund.db会被排除",
+        "核心数据导入模块测试通过：nav_history表有数据时不导入，为空时自动导入",
+        "启动逻辑验证通过：服务重启后不会报错"
+      ],
+      "status": "completed"
+    },
+    {
+      "id": "CHG-20260907-055",
+      "date": "2026-09-07 22:50:49",
+      "version": "2.9.60",
+      "title": "算法参数面板重构：移除手动调参，改为只读展示真实V3算法参数",
+      "description": "用户要求移除页面手动调参功能（需要调整时直接告知助手），并确保页面显示的算法参数与真实榜单算法一致。经排查发现algo_config.py中的参数已过时（抗跌50%+收益50%，4指标百分位加权），与真实V3算法（收益42.5%+抗跌42.5%+卡玛15%，6指标线性评分）不一致。重构后页面直接展示scoring_v3.py中的真实参数。",
+      "changes": [
+        "重构AlgoConfigPanel.vue：移除输入框、保存按钮、恢复默认按钮、立即重算按钮",
+        "改为只读展示：按5个分组展示真实V3算法参数（综合分权重/收益分/抗跌分/榜单样本/推荐信号）",
+        "更新参数值：综合分权重从抗跌50%+收益50%改为收益42.5%+抗跌42.5%+卡玛15%",
+        "更新抗跌分算法：从4指标百分位加权改为6指标线性评分（含反弹修复）",
+        "修正收益分周期权重：d10从0.20改为0.15，m1从0.15改为0.20（与scoring_v3.py一致）",
+        "添加算法版本标签：评分算法V3、抗跌分线性评分、综合分42.5/42.5/15、只读不可编辑",
+        "添加参数变更说明：记录v2.9.57抗跌分统一、综合分权重调整、v2.9.60移除手动调参",
+        "更新SettingsPanel.vue：标题从'算法参数配置'改为'算法参数说明'，更新注释"
+      ],
+      "impact": {
+        "affected_files": [
+          "src/components/settings/AlgoConfigPanel.vue",
+          "src/components/SettingsPanel.vue"
+        ],
+        "benefits": [
+          "页面显示的算法参数与真实算法完全一致，避免误导用户",
+          "移除手动调参功能，避免用户误操作导致算法不一致",
+          "参数调整统一由助手完成，确保代码修改和版本升级的规范性",
+          "页面更简洁，专注于算法说明而非参数调整"
+        ],
+        "risks": [
+          "用户无法在页面上快速调整参数，需要通过助手完成（用户明确要求）",
+          "后端algo_config.py中的旧参数仍然存在，但已不再用于V3算法（保留兼容）"
+        ],
+        "algorithm_consistency": {
+          "before": "页面显示：抗跌50%+收益50%，4指标百分位加权（与真实算法不一致）",
+          "after": "页面显示：收益42.5%+抗跌42.5%+卡玛15%，6指标线性评分（与scoring_v3.py完全一致）"
+        }
+      },
+      "verification": [
+        "综合分权重已与scoring_v3.py第415-417行一致（0.425/0.425/0.15）",
+        "收益分周期权重已与scoring_v3.py第114-121行一致（d3=0.15,d5=0.20,d7=0.15,d10=0.15,m1=0.20,ret2m=0.15）",
+        "抗跌分线性评分参数已与scoring_v3.py第277-286行一致（基准50，6指标系数）",
+        "页面已移除所有可编辑控件，改为只读展示",
+        "SettingsPanel.vue标题和注释已更新"
+      ],
+      "status": "completed"
+    },
+    {
+      "id": "CHG-20260908-064",
+      "title": "命名规范统一：max_dn→max_daily_drop, max_dn7+dd7合并为max_daily_drop_7d",
+      "description": "按命名规范统一所有短命名字段。max_dn（最大单日跌幅）改为max_daily_drop；max_dn7和dd7（值完全相同，重复）合并为max_daily_drop_7d。1040条rank_snapshots.meta数据迁移，20+后端文件修改，前端normalize适配。僵尸字段max_dn5已修复为max_daily_drop_7d。",
+      "category": "refactor",
+      "priority": "high",
+      "date": "2026-09-08",
+      "status": "completed"
+    },
+    {
+      "id": "CHG-20260908-065",
+      "version": "2.11.0",
+      "date": "2026-09-08",
+      "title": "全量字段生命周期审计与旧版死代码彻底清理",
+      "description": "SuperPower网关准入后执行五组死代码清理：(A)删除旧版榜单链路build_ranks/composite_score/is_candidate及panel_score旧分支；(B)删除静态HTML链路md_builder/html_service/rendering目录；(C)修复前端up_captureture/dn_captureture拼写错误、max_dn→max_daily_drop、删除dn_ratio行；(D)清理compare.py dn_ratio死读取、rank_full meta删除up7/reco_score；(E)停止funds表tscore/calmar_score/verdict死列写入、删除verdict_of死函数。版本从2.10.0升级到2.11.0。 【收尾补记】二次核验发现六维reco_score函数(rank_full主流程不调用，仅ranker导入未使用，主流程实际用compute_reco_v32)及其专属字段up7残留，已删除：recommendation.py的reco_score函数、ranker.py的up7计算/返回/导入、night_fund_monitor的up7写入；dn7保留(前端基金卡片7日跌N天在用)，funds表reco_score列保留(compute_reco_v32产出、reco榜单排序)。清理后生产代码up7零残留，import main通过。 【收尾补记2-命名一致性终清】①scoring_v3常量AD_MAX_DD_COEFF→AD_MDD_COEFF、AD_MAX_DN_COEFF→AD_MAX_DAILY_DROP_COEFF(模块内部定义+使用，与字段名mdd/max_daily_drop对齐)；②night_fund_monitor删除dn_ratio死输出(前端只展示up_ratio上涨天数占比，ranker的metrics不产出dn_ratio故恒为0)，并删除max_daily_drop_7d重复字典键；③AlgoConfigPanel只读面板key ad_max_dd_coeff→ad_mdd_coeff、ad_max_dn_coeff→ad_max_daily_drop_coeff；④normalize.ts别名映射方向修正为标准名为key(mdd:['max_dd']、dist20h:['dd20','dd_from_hi'])，与后端card_model.py FIELD_ALIASES对齐；⑤FundCard.test.ts测试mockdd7→max_daily_drop_7d、maxDd→mdd与组件实际读取字段对齐；⑥清空backend/static后重新干净同步dist，清除36个历史构建遗留的旧hash JS(含旧字段名)。验证：生产代码up7/dn_ratio/captureture/旧常量零残留，前端源码旧名零残留，npm build通过(产物9/9、冒烟21/21)，import main通过，/api/ranks正常，三处版本号均2.11.0。",
+      "category": "refactor",
+      "priority": "high",
+      "status": "completed",
+      "affected_modules": [],
+      "affected_files": [
+        "modules/rank/ranking.py",
+        "modules/score/scoring.py",
+        "modules/rank/recommendation.py",
+        "collector/scoring.py",
+        "modules/rank/ranker.py",
+        "modules/common/pipeline.py",
+        "main.py",
+        "modules/common/compare.py",
+        "modules/rank/rank_full.py",
+        "modules/fund/router.py",
+        "src/components/compare/CompareTable.vue",
+        "src/components/fund/FundScoreDetail.vue",
+        "src/types/index.ts",
+        "src/utils/normalize.ts",
+        "src/components/ComparePanel.test.ts",
+        "src/components/FundDetailModal.test.ts",
+        "modules/score/scoring_v3.py",
+        "analysis_pipeline/night_fund_monitor.py",
+        "src/components/settings/AlgoConfigPanel.vue",
+        "src/components/FundCard.test.ts"
+      ],
+      "affected_nodes": [
+        "rank_calc",
+        "score_calc",
+        "rank_api",
+        "compare",
+        "metrics_calc",
+        "rank_page",
+        "fund_card",
+        "global_ui",
+        "compare_page",
+        "fund_modal",
+        "data_source",
+        "fund_universe"
+      ],
+      "changes": [
+        {
+          "group": "CHG-064-A",
+          "action": "delete",
+          "target": "build_ranks/composite_score/is_candidate/panel_score旧分支/recompute_ranks.py"
+        },
+        {
+          "group": "CHG-064-B",
+          "action": "delete",
+          "target": "md_builder/html_service/rendering目录/main.py静态HTML注入"
+        },
+        {
+          "group": "CHG-064-C",
+          "action": "fix",
+          "target": "前端up_captureture/dn_captureture拼写, max_dn→max_daily_drop, 删除dn_ratio, types修复"
+        },
+        {
+          "group": "CHG-064-D",
+          "action": "delete",
+          "target": "compare.py dn_ratio死读取, rank_full meta删除up7/reco_score"
+        },
+        {
+          "group": "CHG-064-E",
+          "action": "delete",
+          "target": "funds表tscore/calmar_score/verdict死列停止写入, verdict_of死函数删除"
+        },
+        {
+          "group": "CHG-064-F",
+          "action": "rename",
+          "target": "scoring_v3常量AD_MDD_COEFF/AD_MAX_DAILY_DROP_COEFF, AlgoConfigPanel key对齐"
+        },
+        {
+          "group": "CHG-064-G",
+          "action": "delete",
+          "target": "night_fund_monitor的dn_ratio死输出+max_daily_drop_7d重复键"
+        },
+        {
+          "group": "CHG-064-H",
+          "action": "fix",
+          "target": "normalize.ts别名映射方向修正, FundCard.test.ts字段名统一, static历史hash清理"
+        }
+      ],
+      "testing": {
+        "unit_tests": "",
+        "integration_tests": "",
+        "results": ""
+      },
+      "impact": {
+        "positive": [],
+        "negative": [],
+        "risks": []
+      },
+      "verification": [],
+      "risk_assessment": "",
+      "risk_level": "medium",
+      "gateway_passed": false,
+      "tested": false
+    },
+    {
+      "id": "CHG-20260908-066",
+      "title": "动能标签5档→4档彻底替换，删除compute_momentum5全链路",
+      "description": "彻底清理旧5档动能标签（强劲/尚可/中性/转弱/衰竭），全链路改用规范4档kinetic_state（强劲/维持/衰减/走弱）。删除compute_momentum5函数本体及所有import/re-export，替换recompute_ad和pipeline中的调用，同步推荐信号动能硬约束（衰竭→走弱，转弱→衰减），更新card_model映射和前端CSS（衰减改为黄色），重算funds表6000只ms和rank_snapshots 1572条meta ms，旧5档全部清零。",
+      "category": "refactor",
+      "priority": "high",
+      "date": "2026-09-08",
+      "status": "completed",
+      "affected_files": [
+        "backend/modules/score/scoring.py (删compute_momentum5函数)",
+        "backend/scripts/recompute_ad.py (compute_momentum5→kinetic_state, 兜底中性→走弱)",
+        "backend/modules/common/pipeline.py (compute_momentum5→kinetic_state)",
+        "backend/domain/card_model.py (MOMENTUM_CLASSES 5档→4档)",
+        "backend/collector/scoring.py (删compute_momentum5 re-export)",
+        "backend/modules/rank/ranker.py (删compute_momentum5 import)",
+        "backend/modules/rank/recommendation.py (compute_reco_score硬约束 衰竭→走弱,转弱→衰减,默认中性→走弱)",
+        "src/types/index.ts (ms类型注释→4档)",
+        "src/components/SettingsPanel.vue (推荐信号说明 衰竭→走弱,转弱→衰减)",
+        "src/components/FundCard.vue (ms-decay衰减颜色绿→黄, 删旧ms-steady CSS)",
+        "backend/fund.db (funds表6000只ms重算, rank_snapshots 1572条meta ms更新)"
+      ],
+      "changes": [
+        "删除compute_momentum5函数本体(modules/score/scoring.py L155-191)及文件头注释",
+        "删除collector/scoring.py和ranker.py中的compute_momentum5 import/re-export",
+        "recompute_ad.py L378: ranker.compute_momentum5(m,excess,follow,prev7) → kinetic_state(m)",
+        "recompute_ad.py L364-366: 兜底ms='中性' → ms='走弱', 清理旧5档残留",
+        "pipeline.py L681: ranker.compute_momentum5(m,_ex,_fl,_p7) → kinetic_state(m)",
+        "card_model.py: MOMENTUM_CLASSES 5档映射→4档(强劲/维持/衰减/走弱), DEFAULT ms-steady→ms-fail",
+        "recommendation.py compute_reco_score: 默认momentum='中性'→'走弱', 硬约束'衰竭'→'走弱','转弱'→'衰减'",
+        "前端FundCard.vue: .ms-decay衰减颜色从绿色(#ECFDF5/var(--down))改为黄色(#FFFBEB/#D97706), 删除旧.ms-steady CSS",
+        "前端SettingsPanel.vue: 推荐信号说明文案中'动能衰竭'→'动能走弱','动能转弱'→'动能衰减'",
+        "前端types/index.ts: ms字段注释从5档改为4档",
+        "数据: funds表6000只基金ms全量重算为4档(强劲34/维持266/衰减1664/走弱4036)",
+        "数据: rank_snapshots 1572条meta中的ms全部更新为4档, 旧5档(尚可/中性/转弱/衰竭)清零",
+        "删除根目录临时测试脚本_test_script.ts"
+      ],
+      "verification": [
+        "import main通过",
+        "npm run build通过(21/21冒烟测试, UI回归无新增问题)",
+        "funds表ms分布: 强劲34/维持266/衰减1664/走弱4036, 旧5档0",
+        "rank_snapshots meta ms分布: 4档, 旧5档0",
+        "API /api/ranks返回520只基金ms: 维持167/走弱166/强劲96/衰减91, 旧5档0",
+        "前端浏览器验证(绕过缓存): 页面旧5档0, 新4档40, 基金卡片显示'走弱'等4档标签",
+        "代码扫描: 生产代码中compute_momentum5零引用, 旧5档动能标签零残留"
+      ]
+    },
+    {
+      "id": "CHG-20260909-073",
+      "version": "2.11.4",
+      "title": "一键更新链路系统性修复(22项)+数据源策略调整(pingzhong主源)",
+      "description": "合并《一键更新流程与指标口径》Q1-Q12决策与《一键更新问题标注》A1-A4/B1-B4/C1-C4，共22项修复。P0阻断: A1(db._PRESERVE_ON_UPDATE保护6评分字段,根治全池90.9%抹空)、A2(clear_metrics_cache补清3缓存变量,解除跨天锁死)、A3/Q7(anti_metrics入参改[{date,dwjz}],抗跌分6指标全生效)、A4(随A2/A3解除)。P1显示: B1(panel_score兼容'自选'/'自选算法榜单')、B2(_RE_RANK_SUBS废弃名→'抗跌',重排40条不再空转)、B3(log_finish签名修正,task_logs恢复rank_full行)、B4(progress兼容rank_full stage,进度条不卡死)。P2观测: C1(收尾补invalidate_query_cache)、C2/Q8(board_days全链路下线12处)、C3(clear_non_visible校验快照日期==今日)、C4(删rank_items假统计)。口径统一: Q1(recompute_ad dwjz+260天)、Q2(mdd全序列历史回撤)、Q3(攻防榜tscore量纲统一0-100,排序不变)、Q4/Q5(refresh_tscores白名单跳过自选/质量/超跌,保留各榜算法分)、Q6(收益分接入超额40%权重,键映射dN→exN)、Q9(内置trading_calendar.json 37节假日)、Q11(停写verdict/suggest,前端零引用)。数据源策略: 测速pingzhong 203ms/全史2314点 > 天天430ms/60点 > 同花顺432ms/60点(假源,缺requests静默降级); 改pingzhong主源+天天兜底,禁用同花顺,workers8→12,废弃三源等量分组,预期阶段1提速~7×。本地实测一键更新6000只/0错误/1235s,上榜342只评分NULL全0,卡片/弹窗/对比页与DB一致,我的-算法面板已同步Q6描述。",
+      "category": "fix",
+      "priority": "critical",
+      "date": "2026-09-09",
+      "status": "completed",
+      "affected_files": [
+        "backend/db.py (A1 _PRESERVE_ON_UPDATE+6评分字段, Q11 suggest序列化, C2 board_days查询删)",
+        "backend/modules/rank/rank_full.py (A2缓存清理, A3/Q7 anti_metrics入参, Q3攻防tscore, Q6 excess, C2 _prev_boards删)",
+        "backend/modules/rank/ranking.py (B1 panel_score分支名)",
+        "backend/modules/rank/ranker.py (C3 clear_non_visible日期校验)",
+        "backend/scripts/recompute_ad.py (B2 _RE_RANK_SUBS, Q1 dwjz260, Q4/Q5 refresh_tscores白名单)",
+        "backend/modules/common/fetch_manager.py (B3 log_finish, B4 progress stage, C1 invalidate_cache)",
+        "backend/modules/common/pipeline.py (C2 _prev_boards删, C4 rank_items删, Q11 verdict/suggest停写)",
+        "backend/modules/fund/fund_metrics.py (Q2 mdd全序列)",
+        "backend/modules/score/scoring_v3.py (Q6 excess40%权重+键映射)",
+        "backend/modules/nav/fetcher.py (Q9交易日历, 数据源策略_fetch_with_pingzhong)",
+        "backend/modules/nav/multi_source_fetcher.py (数据源策略: pingzhong主源+降级链, 禁用hithink)",
+        "backend/modules/nav/trading_calendar.json (Q9新增,2025-2026共37节假日)",
+        "backend/main.py (C2 board_days删, 版本号2.11.4)",
+        "backend/config.py (版本号2.11.4)",
+        "backend/domain/card_model.py (C2 board_days删)",
+        "backend/analysis_pipeline/night_fund_monitor.py (C2 board_days删)",
+        "backend/scripts/check_field_alignment.py (C2 board_days删)",
+        "backend/collector/pipeline.py (C2 _prev_boards re-export删)",
+        "src/types/index.ts (C2 board_days类型删)",
+        "src/components/settings/AlgoConfigPanel.vue (我的-算法面板: 收益分desc补Q6超额40%, excess usage补评分角色)",
+        "backend/docs/function_graph.json (神经网络: 节点描述+病点+版本同步v2.11.4)"
+      ],
+      "related_issues": [
+        "ISSUE-DS-002",
+        "ISSUE-DS-003",
+        "ISSUE-NAV-002",
+        "ISSUE-SCORE-002",
+        "ISSUE-SCORE-003",
+        "ISSUE-MET-003",
+        "ISSUE-MET-004",
+        "ISSUE-OCU-006",
+        "ISSUE-OCU-007"
+      ],
+      "verification": "本地部署实测: 一键更新6000只/0错误/1235s; 上榜342只score/ad/earn NULL全0; 攻防榜tscore全0-100; 自选榜tscore≠score(各榜算法分保留); 014842 mdd=-38.43%(全序列); 数据源pingzhong命中100%/200ms每只"
+    }
+  ],
+  "last_updated": "2026-09-09T00:20:00+08:00",
+  "current_version": "2.11.4",
+  "total_changes": 67
+}

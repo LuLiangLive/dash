@@ -1,0 +1,57 @@
+# 运行时数据库（不打进镜像，由持久化卷管理，首次启动自动创建+迁移+种子导入）
+fund.db
+fund.db-shm
+fund.db-wal
+*.db-journal
+data/
+
+# 注意：fund_core_data.db 是种子数据库（净值+基金基础信息），必须打进镜像
+# 首次启动时自动导入到 /data/fund.db，导入后走一遍「一键更新」即可
+
+# 测试与性能脚本(非生产)
+tests/
+perf_*.py
+verify_*.py
+query_test*.py
+fix_*.py
+debug_*.py
+check_*.py
+_probe_*.py
+_*.json
+_*.txt
+_*.png
+perf_baseline_result.json
+
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# 虚拟环境
+venv/
+env/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 云开发配置(开发用)
+.cloudstudio
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log
+/tmp/
+
+# 文档（可选，减小镜像体积）
+# docs/
+# *.md

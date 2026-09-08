@@ -1,0 +1,128 @@
+{
+  "change_id": "CHG-20260908-060",
+  "version": "2.9.65",
+  "date": "2026-09-08",
+  "title": "市场页面重构 - 参考同花顺最佳实践 + ui-ux-pro-max设计系统",
+  "gateway_passed": true,
+  "gateway_date": "2026-09-08",
+
+  "impact_analysis": {
+    "affected_files": [
+      {
+        "file": "src/components/market/MarketOverview.vue",
+        "change_type": "complete_rewrite",
+        "description": "完全重构市场概览组件，采用新的设计风格和布局"
+      },
+      {
+        "file": "src/views/MarketView.vue",
+        "change_type": "style_modification",
+        "description": "修改.market-content padding-top从8px到0"
+      },
+      {
+        "file": "src/App.vue",
+        "change_type": "logic_modification",
+        "description": "tabOffset：/market页面从96px调整为80px"
+      }
+    ],
+    "affected_neural_nodes": [
+      "market_page",
+      "market_overview",
+      "market_industries",
+      "ui_design",
+      "global_ui"
+    ],
+    "affected_edges_count": 45,
+    "upstream_dependencies": [
+      "market store (indices, dashboard数据)",
+      "App.vue tabOffset计算",
+      "AppTabs组件"
+    ],
+    "downstream_consumers": [
+      "MarketView.vue",
+      "路由/market"
+    ]
+  },
+
+  "risk_assessment": {
+    "high_risks": [
+      {
+        "risk": "数据字段不匹配",
+        "description": "重构后的页面需要的字段可能和现有API返回的字段不一致",
+        "mitigation": "复用现有computed属性，只重新组织布局，不新增数据字段",
+        "status": "resolved"
+      }
+    ],
+    "medium_risks": [
+      {
+        "risk": "实时更新功能",
+        "description": "重构后实时数据更新可能不正常工作",
+        "mitigation": "保留marketStore.refreshIndices()调用和indicesLoading状态",
+        "status": "resolved"
+      },
+      {
+        "risk": "移动端适配",
+        "description": "新布局在移动端可能有适配问题",
+        "mitigation": "完整响应式设计：桌面5列/平板3列/手机2列情绪面板",
+        "status": "resolved"
+      }
+    ],
+    "low_risks": [
+      {
+        "risk": "样式冲突",
+        "description": "新样式可能和现有样式冲突",
+        "mitigation": "使用scoped样式，类名加-v2后缀避免冲突",
+        "status": "resolved"
+      },
+      {
+        "risk": "性能问题",
+        "description": "高密度数据展示可能影响性能",
+        "mitigation": "使用CSS grid和flex，避免复杂计算",
+        "status": "resolved"
+      }
+    ]
+  },
+
+  "checklist": [
+    {"item": "分析现有MarketOverview.vue数据结构和API接口", "status": "completed"},
+    {"item": "使用ui-ux-pro-max生成设计系统建议", "status": "completed"},
+    {"item": "参考同花顺最佳实践页面设计", "status": "completed"},
+    {"item": "设计新布局：KPI卡片+情绪面板+行业资金+热门题材", "status": "completed"},
+    {"item": "实现顶部实时状态栏（脉冲指示器）", "status": "completed"},
+    {"item": "实现指数KPI横向滚动卡片", "status": "completed"},
+    {"item": "实现市场情绪5面板", "status": "completed"},
+    {"item": "实现行业资金双列布局", "status": "completed"},
+    {"item": "实现热门题材标签云", "status": "completed"},
+    {"item": "保留风格轮动和分级研判", "status": "completed"},
+    {"item": "优化二级Tab和内容间距（32px->8px）", "status": "completed"},
+    {"item": "完整响应式适配", "status": "completed"},
+    {"item": "版本升级到2.9.65", "status": "completed"},
+    {"item": "变更记录到change_history.json", "status": "completed"},
+    {"item": "神经网络更新", "status": "in_progress"},
+    {"item": "前端构建验证", "status": "pending"}
+  ],
+
+  "design_decisions": {
+    "style": "Real-Time Monitoring + Data-Dense Dashboard + Financial Dashboard",
+    "reference": [
+      "ui-ux-pro-max设计系统",
+      "同花顺涨停情绪市场脉冲屏",
+      "同花顺市场热度与飙升雷达"
+    ],
+    "key_features": [
+      "实时更新脉冲指示器",
+      "指数KPI横向滚动卡片",
+      "市场情绪自动判断（5档）",
+      "涨跌家数可视化进度条",
+      "行业资金双列对比",
+      "热门题材热度字号区分"
+    ],
+    "spacing": {
+      "page_padding": "8px 12px",
+      "card_gap": "8-10px",
+      "section_gap": "10-12px",
+      "tab_content_gap": "8px（从32px优化）"
+    }
+  },
+
+  "conclusion": "通过 - 所有高/中风险已解决，检查清单基本完成，待神经网络更新和构建验证"
+}

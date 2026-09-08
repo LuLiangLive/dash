@@ -1,0 +1,67 @@
+# docker-compose.yml —— 投研看板（API + 采集器 双容器部署）
+#
+# 启动: docker compose up -d
+# 停止: docker compose down
+# 查看日志: docker compose logs -f api / collector
+#
+# 架构说明:
+#   - api 容器: FastAPI 服务，处理网页和 API 请求
+#   - collector 容器: APScheduler 采集调度器，每日 20:30 全量采集 + 07/12/20 资讯
+#   - 两个容器共享 ./data 目录（SQLite WAL 模式支持一写多读）
+#   - 采集完成后通过 task_logs 表通知 API 侧缓存失效（已内置机制）
+
+version: "3.8"
+
+services:
+  # ── API 服务 ──────────────────────────────────────────────
+  api:
+    build: .
+    container_name: invest-dashboard-api
+    restart: unless-stopped
+    ports:
+      - "8002:8002"
+    environment:
+      - ROLE=api
+      - PORT=8002
+      - DB_PATH=/data/fund.db
+      - API_KEYS=${API_KEYS:-dev-key-123}
+      - TZ=Asia/Shanghai
+      - FULL_MARKET=1
+      - COLLECT_MAX=6000
+    volumes:
+      - ./data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/api/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # ── 采集调度器 ────────────────────────────────────────────
+  collector:
+    build: .
+    container_name: invest-dashboard-collector
+    restart: unless-stopped
+    environment:
+      - ROLE=collector
+      - DB_PATH=/data/fund.db
+      - API_KEYS=${API_KEYS:-dev-key-123}
+      - TZ=Asia/Shanghai
+      - FULL_MARKET=1
+      - COLLECT_MAX=6000
+    volumes:
+      - ./data:/data
+    depends_on:
+      - api
+    # 采集器不需要暴露端口
+
+# ── 数据卷说明 ──────────────────────────────────────────────
+# ./data 目录在宿主机上，包含:
+#   - fund.db          SQLite 主数据库
+#   - fund.db-wal      WAL 预写日志（SQLite 自动管理）
+#   - fund.db-shm      共享内存文件（SQLite 自动管理）
+#   - nav_cache_full.json  净值缓存文件
+#   - score_snapshots.json 分数快照
+#
+# 注意: 首次启动时，api 容器会先初始化 fund.db（从镜像内 seed），
+#       collector 容器启动时会立即执行一次全量采集（约 5-7 分钟）。

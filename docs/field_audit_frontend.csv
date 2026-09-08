@@ -1,0 +1,121 @@
+前端字段名,后端对应字段,使用文件:行号,用途分类,对比页,基金卡片,榜单列表,详情弹窗,状态
+code,code,"types/index.ts:27; types/index.ts:85; types/index.ts:178; normalize.ts:185; FundCard.vue:330/1039; FundDetailModal.vue:12; FundBasicInfo.vue:47; CompareTable.vue:200/206/220/226/292; CompareChart.vue:32/40; CompareSelector.vue:34/40; WatchList.vue:54/197; FundView.vue:193; CompareView.vue:161; WatchView.vue:39; watch.ts:54/60/259; rank.ts:54",展示显示/计算逻辑/筛选排序/透传,是,是,是,是,正常
+name,name,"types/index.ts:28; types/index.ts:86; types/index.ts:179; normalize.ts:186; FundCard.vue:976; FundBasicInfo.vue:45; CompareTable.vue:200/220/244/245/271/272/294; CompareChart.vue:32/40/180; CompareSelector.vue:39; WatchList.vue:55; CompareView.vue:160/185; FundView.vue(间接); watch.ts:60/247; rank.ts:54",展示显示/透传,是,是,是,是,正常
+rank,rank,"types/index.ts:29; normalize.ts:187; FundCard.vue:810/941/949; FundView.vue:202; WatchList.vue:198; WatchView.vue:80",展示显示/筛选排序,,是,是,,正常
+score,score,"types/index.ts:30; normalize.ts:188; FundCard.vue:1156; watch.ts:54; CompareTable.vue:156; FundBasicInfo.vue:37; WatchView.vue:44",展示显示/计算逻辑/筛选排序,是,是,是,是,正常
+tscore,tscore,"types/index.ts:31; normalize.ts:188; watch.ts:54; CompareTable.vue:156; FundBasicInfo.vue:37",计算逻辑/展示显示,是,,是,是,正常
+ad_score,ad_score,"types/index.ts:32; normalize.ts:189; FundCard.vue:1084; watch.ts:54; CompareTable.vue:80/94/152; FundScoreDetail.vue:103/188; FundBasicInfo.vue:35",展示显示/计算逻辑,是,是,是,是,正常
+earn_score,earn_score,"types/index.ts:33; normalize.ts:190; FundCard.vue:1120; CompareTable.vue:147; FundBasicInfo.vue:36",展示显示/计算逻辑,是,是,,是,正常
+dual,dual,"types/index.ts:157; CompareTable.vue:156; FundBasicInfo.vue:37",计算逻辑/展示显示,是,,,是,正常
+ms,ms,"types/index.ts:35; normalize.ts:191; FundCard.vue:482/1012",展示显示/计算逻辑,,是,是,,正常
+reco,reco,"types/index.ts:37; normalize.ts:192; FundCard.vue:595/667/1021",展示显示/计算逻辑,,是,是,,正常
+reco_days,reco_days,"types/index.ts:38; normalize.ts:193; FundCard.vue:613",展示显示/计算逻辑,,是,是,,正常
+prev_reco,prev_reco,types/index.ts:39,类型定义,,,,正常
+prev_reco_days,prev_reco_days,types/index.ts:40,类型定义,,,,正常
+mdd,mdd,"types/index.ts:41; normalize.ts:17/197; FundCard.vue:1336; CompareTable.vue:65; FundScoreDetail.vue:88",展示显示/计算逻辑,是,是,是,是,正常
+vol,vol,"types/index.ts:42; CompareTable.vue:69; FundScoreDetail.vue:92",展示显示,是,,,是,正常
+calmar,calmar,"types/index.ts:43; CompareTable.vue:57; FundScoreDetail.vue:71; watch.ts:259; types/index.ts:265",展示显示/计算逻辑,是,,,是,正常
+themes,themes,"types/index.ts:45; normalize.ts:200; FundCard.vue:1588/1624; watch.ts:119/129; FundView.vue:37; WatchView.vue(间接)",展示显示/计算逻辑,,是,是,,正常
+stocks,stocks,"types/index.ts:46; watch.ts:130",透传,,,,正常
+board_days,board_days,"types/index.ts:47; types/index.ts:263",类型定义,,,,正常
+cros,cros,"types/index.ts:48; normalize.ts:164/201; FundCard.vue(间接boardTags)",计算逻辑/展示显示,,是,是,,正常
+etf_abbr,etf_abbr,"types/index.ts:50; normalize.ts:202",类型定义/计算逻辑,,,是,,正常
+is_etf,is_etf,"types/index.ts:51; normalize.ts:203; FundView.vue:32",筛选排序/计算逻辑,,,是,,正常
+dn7,dn7,"types/index.ts:53; normalize.ts:195; FundCard.vue:1264",展示显示/计算逻辑,,是,是,,正常
+max_daily_drop_7d,max_daily_drop_7d,"types/index.ts:54; normalize.ts:196; FundCard.vue:1300",展示显示/计算逻辑,,是,是,,正常
+d1,d1,"types/index.ts:56; normalize.ts:63/178; watch.ts:259; FundView.vue:46; WatchView.vue:46",展示显示/计算逻辑/筛选排序,,是,是,,正常
+d2,d2,"types/index.ts:57; normalize.ts:64/178",展示显示/计算逻辑,,是,是,,正常
+d3,d3,"types/index.ts:58; normalize.ts:65/178; CompareTable.vue:41; FundScoreDetail.vue:55",展示显示/计算逻辑,是,是,是,是,正常
+d5,d5,"types/index.ts:59; normalize.ts:66/178; CompareTable.vue:42; FundScoreDetail.vue:56",展示显示/计算逻辑,是,是,是,是,正常
+d7,d7,"types/index.ts:60; normalize.ts:67/178; CompareTable.vue:43; FundScoreDetail.vue:57",展示显示/计算逻辑,是,是,是,是,正常
+d10,d10,"types/index.ts:61; normalize.ts:68/178; CompareTable.vue:44; FundScoreDetail.vue:58; FundView.vue:41",展示显示/计算逻辑/筛选排序,是,是,是,是,正常
+m1,m1,"types/index.ts:62; normalize.ts:69/178; CompareTable.vue:45; FundScoreDetail.vue:59",展示显示/计算逻辑,是,是,是,是,正常
+m3,m3,"types/index.ts:63; normalize.ts:70/178",展示显示/计算逻辑,,是,是,,正常
+m6,m6,"types/index.ts:64; normalize.ts:71/178; CompareTable.vue:47; FundScoreDetail.vue:61; watch.ts:259",展示显示/计算逻辑,是,是,是,是,正常
+y1,y1,"types/index.ts:65; normalize.ts:72/178; CompareTable.vue:48; FundScoreDetail.vue:62",展示显示/计算逻辑,是,是,是,是,正常
+dd20,dd20,"types/index.ts:66; normalize.ts:16",类型定义/别名映射,,,是,,别名映射
+streak,streak,"types/index.ts:67; normalize.ts:18/74/178",展示显示/计算逻辑,,是,是,,正常
+ret2m,ret2m,"CompareTable.vue:46; FundScoreDetail.vue:60/183",展示显示,是,,,是,正常
+up_ratio,up_ratio,"CompareTable.vue:53; FundScoreDetail.vue:67",展示显示,是,,,是,正常
+hi_cnt,hi_cnt,"CompareTable.vue:54; FundScoreDetail.vue:68",展示显示,是,,,是,正常
+pl,pl,"CompareTable.vue:55; FundScoreDetail.vue:69",展示显示,是,,,是,正常
+up_captureture,up_capture,"types/index.ts:159; CompareTable.vue:56/98/99/129; FundScoreDetail.vue:70/74",展示显示/计算逻辑,是,,,是,拼写错误
+dn_captureture,dn_capture,"types/index.ts:160; CompareTable.vue:72/98/99/129; FundScoreDetail.vue:74/95",展示显示/计算逻辑,是,,,是,拼写错误
+max_dn,max_daily_drop,"CompareTable.vue:66; FundScoreDetail.vue:89",展示显示,是,,,是,旧字段名
+mdd_days,mdd_days,"CompareTable.vue:65(suffix)/211; FundScoreDetail.vue:88",展示显示,是,,,是,正常
+mdd6,mdd6,"CompareTable.vue:67; FundScoreDetail.vue:90",展示显示,是,,,是,正常
+mdd1y,mdd1y,"CompareTable.vue:68; FundScoreDetail.vue:91",展示显示,是,,,是,正常
+down_vol,down_vol,"CompareTable.vue:70; FundScoreDetail.vue:93",展示显示,是,,,是,正常
+dn_ratio,(已废弃),"CompareTable.vue:71; FundScoreDetail.vue:94",展示显示,是,,,是,旧字段名
+down_sharpe,down_sharpe,"CompareTable.vue:76; FundScoreDetail.vue:99",展示显示,是,,,是,正常
+fund_avg,fund_avg,"types/index.ts:161; types/index.ts:170; CompareTable.vue:58/73/129; FundScoreDetail.vue:72/96/185",展示显示/计算逻辑,是,,,是,正常
+idx_avg,idx_avg,"types/index.ts:162; types/index.ts:171; CompareTable.vue:59/74; FundScoreDetail.vue:73/97",展示显示,是,,,是,正常
+repair,repair,"types/index.ts:163; CompareTable.vue:75/130; FundScoreDetail.vue:98/187",展示显示/计算逻辑,是,,,是,正常
+down_days,down_days,types/index.ts:164,类型定义,,,,正常
+up_days,up_days,"types/index.ts:172; CompareTable.vue:97",计算逻辑,是,,,是,正常
+tag,tag,types/index.ts:158,类型定义,,,,正常
+dd_count,dd_count,"types/index.ts:198; CompareTable.vue:77; FundScoreDetail.vue:100/184",展示显示,是,,,是,正常
+n5,n5,"CompareTable.vue:78; FundScoreDetail.vue:101/186",展示显示,是,,,是,正常
+n10,n10,"CompareTable.vue:79; FundScoreDetail.vue:102",展示显示,是,,,是,正常
+ex3,excess.d3,"CompareTable.vue:49/91",配置/计算逻辑,是,,,,正常
+ex7,excess.d7,"CompareTable.vue:50/91",配置/计算逻辑,是,,,,正常
+ex10,excess.d10,"CompareTable.vue:51/91",配置/计算逻辑,是,,,,正常
+ex21,excess.m1,"CompareTable.vue:52/91",配置/计算逻辑,是,,,,正常
+win_rate,(计算值),"CompareTable.vue:60/95-101",计算逻辑,是,,,,正常
+scale,scale,"types/index.ts:181; FundBasicInfo.vue:48",展示显示,,,是,正常
+est,est,"types/index.ts:182; FundBasicInfo.vue:49",展示显示,,,是,正常
+ftype,ftype,types/index.ts:180,类型定义,,,,正常
+yindie,yindie,"types/index.ts:183; types/index.ts:262",类型定义,,,,正常
+nav_ret,nav_ret,types/index.ts:184,类型定义,,,,正常
+navs,navs,"types/index.ts:187; CompareChart.vue:30; FundDetailModal.vue:153; FundScoreDetail.vue:13; RecoChart.vue:25",展示显示/计算逻辑,是,,,是,正常
+dates,dates,"types/index.ts:188; CompareChart.vue:19/29; FundDetailModal.vue:154; FundScoreDetail.vue:14; RecoChart.vue:24",展示显示/计算逻辑,是,,,是,正常
+enhanced,enhanced,"types/index.ts:190; CompareTable.vue:87; FundScoreDetail.vue:23",透传/计算逻辑,是,,,是,正常
+momentum_tag,momentum_tag,"types/index.ts:195; FundScoreDetail.vue:50",展示显示,,,是,正常
+rise_tag,rise_tag,"types/index.ts:196; FundScoreDetail.vue:51",展示显示,,,是,正常
+dd_type,dd_type,"types/index.ts:197; FundScoreDetail.vue:84",展示显示,,,是,正常
+score_series,score_series,"types/index.ts:191; FundScoreDetail.vue:24; ScoreChart.vue:7",透传,,,是,正常
+reco_history,reco_history,"types/index.ts:194; FundDetailModal.vue:39; FundScoreDetail.vue:159; RecoChart.vue:9",透传/展示显示,,,是,正常
+excess,excess,"types/index.ts:192; CompareTable.vue:90; FundScoreDetail.vue:25",透传/计算逻辑,是,,,是,正常
+rebound,rebound,"types/index.ts:193; CompareTable.vue:88; FundScoreDetail.vue:26",透传,是,,,是,正常
+resist,resist,"types/index.ts:201; CompareTable.vue:85; FundScoreDetail.vue:21; FundBasicInfo.vue:35-37",透传/计算逻辑,是,,,是,正常
+rise,rise,"types/index.ts:202; CompareTable.vue:86; FundScoreDetail.vue:22",透传,是,,,是,正常
+stats,stats,"types/index.ts:189; CompareTable.vue:103/211; FundScoreDetail.vue:20",透传/动态访问,是,,,是,正常
+comp,comp,"types/index.ts:147; ScoreChart.vue:32/64/76",展示显示/计算逻辑,,,是,正常
+ad,ad,"types/index.ts:148; ScoreChart.vue:31/54/75",展示显示/计算逻辑,,,是,正常
+earn,earn,"types/index.ts:149; ScoreChart.vue:30/44/74",展示显示/计算逻辑,,,是,正常
+events,events,types/index.ts:150,类型定义,,,,正常
+weights,weights,types/index.ts:151,类型定义,,,,正常
+chg,chg,"RecoChart.vue:93",计算逻辑,,,是,正常(类型缺失)
+days,days,types/index.ts:141,类型定义,,,,正常
+date,date,"CompareTable.vue:248/275; FundScoreDetail.vue:123/148; RecoChart.vue:93",展示显示,是,,,是,正常
+idx,idx,"CompareTable.vue:249/276; FundScoreDetail.vue:124/149",展示显示,是,,,是,正常
+cyb,cyb,"CompareTable.vue:250/277; FundScoreDetail.vue:125/150",展示显示,是,,,是,正常
+kc,kc,"CompareTable.vue:251/278; FundScoreDetail.vue:126/151",展示显示,是,,,是,正常
+fund,fund,"CompareTable.vue:252/256/279/281; FundScoreDetail.vue:127/152",展示显示,是,,,是,正常
+abnormal,abnormal,"CompareTable.vue:253; FundScoreDetail.vue:127",展示显示,是,,,是,正常
+crash_level,crash_level,"normalize.ts:204; FundCard.vue:859/1716",展示显示/计算逻辑,,是,是,,正常
+bottom_stage,bottom_stage,"normalize.ts:205; FundCard.vue:869/1717",展示显示/计算逻辑,,是,是,,正常
+rtag,rtag,"normalize.ts:164/201; types/index.ts:264",计算逻辑/类型定义,,是,是,,正常
+_v,_v,"types/index.ts:99; types/index.ts:260; watch.ts:259",计算逻辑/版本控制,,,,正常
+_loading,_loading,"types/index.ts:261; watch.ts:167/266",内部状态,,,,正常
+fav,fav,types/index.ts:254,类型定义,,,,正常
+added_at,added_at,types/index.ts:253,类型定义,,,,正常
+rzf,d1,"types/index.ts:88; normalize.ts:6",类型定义/别名映射,,,,别名映射
+c2d,d2,"types/index.ts:89; normalize.ts:7",类型定义/别名映射,,,,别名映射
+c3d,d3,"types/index.ts:90; normalize.ts:8",类型定义/别名映射,,,,别名映射
+m5,d5,"types/index.ts:91; normalize.ts:9",类型定义/别名映射,,,,别名映射
+m7,d7,"types/index.ts:92; normalize.ts:10",类型定义/别名映射,,,,别名映射
+m10,d10,"types/index.ts:93; normalize.ts:11",类型定义/别名映射,,,,别名映射
+n1,m1,"types/index.ts:95; normalize.ts:12",类型定义/别名映射,,,,别名映射
+n3,m3,"types/index.ts:96; normalize.ts:13",类型定义/别名映射,,,,别名映射
+n6,m6,"types/index.ts:97; normalize.ts:14",类型定义/别名映射,,,,别名映射
+n1y,y1,"types/index.ts:98; normalize.ts:15",类型定义/别名映射,,,,别名映射
+lz,streak,normalize.ts:18,别名映射,,,,别名映射
+dd_from_hi,dist20h,"normalize.ts:16; FundScoreDetail.vue:68",别名映射/展示显示,,,是,别名映射
+dist20h,dist20h,"normalize.ts:16/73/178",计算逻辑/展示显示,,是,是,,正常
+dwjz,dwjz,"types/index.ts:105; funds.ts:46",类型定义/API层,,,,正常
+ljjz,ljjz,"types/index.ts:107; funds.ts:46",类型定义/API层,,,,正常
+ratio,ratio,types/index.ts:120,类型定义,,,,正常
+pct,pct,"types/index.ts:121; normalize.ts(theme解析)",类型定义/计算逻辑,,是,是,,正常
+summary,summary,"types/index.ts:286; CompareTable.vue:27; ComparePanel.vue:177; CompareView.vue:218",展示显示/透传,是,,,,正常
+index_note,index_note,types/index.ts:211,类型定义,,,,正常

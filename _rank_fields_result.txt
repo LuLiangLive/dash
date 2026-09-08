@@ -1,0 +1,193 @@
+panels keys: ['day', 'reco', 'attack']
+
+=== Panel: day ===
+类型: dict
+子keys: ['七日', '三日', '当日', '综合', '近2周']
+
+  子Panel: 七日, 基金数: 40
+  字段:
+    - rank
+    - code
+    - name
+    - tscore
+    - tstatus
+    - d1
+    - d2
+    - d3
+    - d5
+    - d7
+    - d10
+    - m1
+    - m3
+    - m6
+    - y1
+    - ret2m
+    - dn7
+    - dd7
+    - max_dn
+    - max_dd
+    - dd_from_hi
+    - hi_cnt
+    - vol
+    - down_vol
+    - down_sharpe
+    - calmar
+    - pl
+    - up_ratio
+    - up_cap
+    - dn_cap
+    - ms
+    - streak
+    - score
+    - ad_score
+    - earn_score
+    - reco
+    - reco_score
+    - reco_days
+    - prev_reco
+    - prev_reco_days
+    - themes
+    - is_etf
+    - etf_abbr
+    - nav_date
+    - nav
+    - sec
+    - ftype
+    - scale
+    - est
+    - manager
+    - track
+    - board_days
+    - cros
+    - risk
+  reco: None
+  recoDays: 不存在
+  tstatus: 稳涨·有支撑
+
+=== Panel: reco ===
+类型: dict
+子keys: ['抗跌', '自选', '质量', '超跌筑底']
+
+  子Panel: 抗跌, 基金数: 40
+  字段:
+    - rank
+    - code
+    - name
+    - tscore
+    - tstatus
+    - d1
+    - d2
+    - d3
+    - d5
+    - d7
+    - d10
+    - m1
+    - m3
+    - m6
+    - y1
+    - ret2m
+    - dn7
+    - dd7
+    - max_dn
+    - max_dd
+    - dd_from_hi
+    - hi_cnt
+    - vol
+    - down_vol
+    - down_sharpe
+    - calmar
+    - pl
+    - up_ratio
+    - up_cap
+    - dn_cap
+    - ms
+    - streak
+    - score
+    - ad_score
+    - earn_score
+    - reco
+    - reco_score
+    - reco_days
+    - prev_reco
+    - prev_reco_days
+    - themes
+    - is_etf
+    - etf_abbr
+    - nav_date
+    - nav
+    - sec
+    - ftype
+    - scale
+    - est
+    - manager
+    - track
+    - board_days
+    - cros
+    - risk
+  reco: None
+  recoDays: 不存在
+  tstatus: 贴近高位·抗跌
+
+=== Panel: attack ===
+类型: dict
+子keys: ['反弹先锋', '强抗跌', '攻守兼备', '高弹性']
+
+  子Panel: 反弹先锋, 基金数: 40
+  字段:
+    - rank
+    - code
+    - name
+    - tscore
+    - tstatus
+    - d1
+    - d2
+    - d3
+    - d5
+    - d7
+    - d10
+    - m1
+    - m3
+    - m6
+    - y1
+    - ret2m
+    - dn7
+    - dd7
+    - max_dn
+    - max_dd
+    - dd_from_hi
+    - hi_cnt
+    - vol
+    - down_vol
+    - down_sharpe
+    - calmar
+    - pl
+    - up_ratio
+    - up_cap
+    - dn_cap
+    - ms
+    - streak
+    - score
+    - ad_score
+    - earn_score
+    - reco
+    - reco_score
+    - reco_days
+    - prev_reco
+    - prev_reco_days
+    - themes
+    - is_etf
+    - etf_abbr
+    - nav_date
+    - nav
+    - sec
+    - ftype
+    - scale
+    - est
+    - manager
+    - track
+    - board_days
+    - cros
+    - risk
+  reco: None
+  recoDays: 不存在
+  tstatus: 稳涨·有支撑

@@ -1,0 +1,119 @@
+{
+  "change_id": "CHG-20260908-059+058",
+  "analysis_time": "2026-09-08",
+  "affected_files": [
+    "src/components/FundDetailModal.vue",
+    "src/components/ToastHost.vue",
+    "src/App.vue",
+    "src/components/watch/WatchList.vue",
+    "src/views/CompareView.vue",
+    "src/views/WatchView.vue"
+  ],
+  "related_nodes_count": 18,
+  "related_edges_count": 79,
+  "risks": [
+    {
+      "id": "RISK-001",
+      "level": "中",
+      "description": "FundDetailModal.vue的saveImage函数修改可能影响截图完整性",
+      "impact": "如果临时展开弹窗样式后恢复失败，可能导致弹窗布局错乱",
+      "mitigation": "截图后必须恢复原始样式，使用try/finally确保恢复"
+    },
+    {
+      "id": "RISK-002",
+      "level": "低",
+      "description": "全局Toast和Message位置修改可能影响桌面端显示",
+      "impact": "桌面端没有灵动岛，env(safe-area-inset-top)为0，不影响",
+      "mitigation": "使用env(safe-area-inset-top, 0px)，桌面端自动回退为0"
+    },
+    {
+      "id": "RISK-003",
+      "level": "中",
+      "description": "WatchList.vue分组位置调整可能影响自选页面布局",
+      "impact": "分组标签从列表头下面移到上面，可能影响视觉层次",
+      "mitigation": "用户明确要求，已验证结构正确"
+    },
+    {
+      "id": "RISK-004",
+      "level": "低",
+      "description": "CompareView.vue安全区域适配可能影响其他页面",
+      "impact": "只修改了CompareView.vue的样式，不影响其他页面",
+      "mitigation": "样式是scoped的，只影响当前页面"
+    },
+    {
+      "id": "RISK-005",
+      "level": "高",
+      "description": "全局UI修改未走变更准入网关，可能遗漏上下游同步",
+      "impact": "如果有其他组件依赖Toast/Message的位置或FundDetailModal的行为，可能出现不一致",
+      "mitigation": "本次网关分析补做，检查所有上下游节点，确保同步修改"
+    }
+  ],
+  "checklist": [
+    {
+      "item": "FundDetailModal.vue saveImage函数截图完整内容",
+      "status": "✓ 已完成",
+      "verify": "截图前临时展开maxHeight和overflow，截图后恢复"
+    },
+    {
+      "item": "FundDetailModal.vue 移动端直接下载，不要长按保存",
+      "status": "✓ 已完成",
+      "verify": "移除了移动端新窗口打开逻辑，统一用a标签下载"
+    },
+    {
+      "item": "ToastHost.vue top位置适配灵动岛",
+      "status": "✓ 已完成",
+      "verify": "top: calc(16px + env(safe-area-inset-top, 0px))"
+    },
+    {
+      "item": "App.vue naive-ui Message位置适配灵动岛",
+      "status": "✓ 已完成",
+      "verify": ":deep(.n-message-container) top覆盖"
+    },
+    {
+      "item": "WatchList.vue 分组标签移到列表头上面",
+      "status": "✓ 已完成",
+      "verify": "group-manager-slot在list-header前面"
+    },
+    {
+      "item": "CompareView.vue compare-header安全区域适配",
+      "status": "✓ 已完成",
+      "verify": "padding-top添加env(safe-area-inset-top)"
+    },
+    {
+      "item": "CompareView.vue selector-footer移动端变形修复",
+      "status": "✓ 已完成",
+      "verify": "flex-wrap: nowrap, white-space: nowrap"
+    },
+    {
+      "item": "FundDetailModal.vue anti-footer底部安全区域适配",
+      "status": "✓ 已完成",
+      "verify": "padding-bottom添加env(safe-area-inset-bottom)"
+    },
+    {
+      "item": "检查是否有其他组件使用自定义Toast/Message",
+      "status": "待检查",
+      "verify": "搜索所有使用toast/message的组件"
+    },
+    {
+      "item": "检查是否有其他页面需要安全区域适配",
+      "status": "待检查",
+      "verify": "搜索所有sticky/fixed定位的顶部元素"
+    },
+    {
+      "item": "版本号升级到2.9.64",
+      "status": "✓ 已完成",
+      "verify": "config.py/version.ts/function_graph.json已同步"
+    },
+    {
+      "item": "变更记录写入change_history.json",
+      "status": "✓ 已完成",
+      "verify": "CHG-20260908-059已记录"
+    },
+    {
+      "item": "神经网络function_graph.json更新",
+      "status": "待更新",
+      "verify": "需要更新相关节点的描述和check_points"
+    }
+  ],
+  "gateway_decision": "有条件通过（需完成待检查项和神经网络更新）"
+}

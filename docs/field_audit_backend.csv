@@ -1,0 +1,141 @@
+﻿字段名,所属层面,计算位置,存储位置,主流程使用,旧版链路使用,静态HTML使用,维度分类,删除影响评估,建议
+rank,rank_full_meta,_build_item入参rank; compute_all_panels中enumerate生成,rank_snapshots.rank列 + meta JSON,是,是,是,基础信息,榜单排名核心字段，删除导致榜单无序号,保留
+code,rank_full_meta,f['code'] ← funds.code,rank_snapshots.code列 + meta JSON,是,是,是,基础信息,基金唯一标识，全系统依赖,保留
+name,rank_full_meta,f.get('name') ← funds.name,rank_snapshots.name列 + meta JSON,是,是,是,基础信息,基金名称展示必需,保留
+tscore,rank_full_meta,_get_unified_score(f).dual 优先; 降级tscore入参/f.get('score'),meta JSON (rank_snapshots),是,是,是,评分,榜单卡片综合分展示; 自选榜/质量榜/攻防榜传入面板特定分,保留
+score,rank_full_meta,_get_unified_score(f).dual 优先; 降级f.get('score') ← funds.score,meta JSON; funds.score列,是,是,是,评分,"统一算法综合分(dual), 卡片/弹窗/对比共用",保留
+ad_score,rank_full_meta,_get_unified_score(f).ad_score 优先; 降级f.get('ad_score') ← funds.ad_score,meta JSON; funds.ad_score列,是,是,是,评分,"统一算法抗跌分, 全系统展示",保留
+earn_score,rank_full_meta,_get_unified_score(f).earn_score 优先; 降级f.get('earn_score') ← funds.earn_score,meta JSON; funds.earn_score列,是,是,是,评分,"统一算法收益分, 全系统展示",保留
+reco_score,rank_full_meta,f.get('reco_score') ← funds.reco_score (recompute_ad计算),meta JSON; funds.reco_score列,"否(rank_full不计算,仅透传)",是(build_ranks开仓榜/推荐榜),是(_reco_line fallback),评分,旧版六维推荐分; rank_full仅透传不计算; md_builder _reco_line作为tscore fallback第2顺位,需确认
+tstatus,rank_full_meta,入参tstatus / f._tstatus / ranker.trend_status(m)现算,meta JSON,"是(稳涨/强趋势已移除,但trend_status仍被兜底调用)",是,是(_fund_line末尾徽章),形态,"形态分型标签(贴近高位·抗跌/连涨·强趋势等); rank_full中仅兜底计算,面板不传时现算",保留
+ms,rank_full_meta,f.get('ms') ← funds.ms (recompute_ad.compute_momentum5),meta JSON; funds.ms列,是,是,是,形态,"动能5档(强劲/尚可/中性/转弱/衰竭), 卡片标签",保留
+d1,rank_full_meta,metrics.d1 ← ranker.calc_metrics / _metrics_for现算; funds.d1列,meta JSON; funds.d1列,是(日榜排序键d1/d3/d7/d10),是,是,收益,"1日涨幅, 日榜排序核心+卡片展示",保留
+d2,rank_full_meta,metrics.d2 ← ranker.calc_metrics / _metrics_for现算; funds.d2列,meta JSON; funds.d2列,是(日榜排序键d1/d3/d7/d10),是,是,收益,"2日累计, 日榜排序核心+卡片展示",保留
+d3,rank_full_meta,metrics.d3 ← ranker.calc_metrics / _metrics_for现算; funds.d3列,meta JSON; funds.d3列,是(日榜排序键d1/d3/d7/d10),是,是,收益,"3日累计, 日榜排序核心+卡片展示",保留
+d5,rank_full_meta,metrics.d5 ← ranker.calc_metrics / _metrics_for现算; funds.d5列,meta JSON; funds.d5列,是(日榜排序键d1/d3/d7/d10),是,是,收益,"5日累计, 日榜排序核心+卡片展示",保留
+d7,rank_full_meta,metrics.d7 ← ranker.calc_metrics / _metrics_for现算; funds.d7列,meta JSON; funds.d7列,是(日榜排序键d1/d3/d7/d10),是,是,收益,"7日累计, 日榜排序核心+卡片展示",保留
+d10,rank_full_meta,metrics.d10 ← ranker.calc_metrics / _metrics_for现算; funds.d10列,meta JSON; funds.d10列,是(日榜排序键d1/d3/d7/d10),是,是,收益,"10日累计, 日榜排序核心+卡片展示",保留
+m1,rank_full_meta,metrics.m1 ← funds.m1优先(pingzhongdata权威值)或ranker._ret现算,meta JSON; funds.m1列,是(质量榜y1归一化),是,是,收益,"近1月收益, 卡片/对比/质量榜因子",保留
+m3,rank_full_meta,metrics.m3 ← funds.m3优先(pingzhongdata权威值)或ranker._ret现算,meta JSON; funds.m3列,是(质量榜y1归一化),是,是,收益,"近3月收益, 卡片/对比/质量榜因子",保留
+m6,rank_full_meta,metrics.m6 ← funds.m6优先(pingzhongdata权威值)或ranker._ret现算,meta JSON; funds.m6列,是(质量榜y1归一化),是,是,收益,"近6月收益, 卡片/对比/质量榜因子",保留
+y1,rank_full_meta,metrics.y1 ← funds.y1优先(pingzhongdata权威值)或ranker._ret现算,meta JSON; funds.y1列,是(质量榜y1归一化),是,是,收益,"近1年收益, 卡片/对比/质量榜因子",保留
+ret2m,rank_full_meta,metrics.ret2m ← ranker.calc_metrics,meta JSON,是(scoring_v3收益分输入),是,是(compare总结),收益,"近2月收益, scoring_v3 compute_earn_score核心输入",保留
+dn7,rank_full_meta,metrics.dn7 ← ranker.calc_metrics,meta JSON; funds.dn7列,是,是,是(下跌N天标签),形态,"7日内下跌天数, 卡片'下跌N天'标签",保留
+up7,rank_full_meta,metrics.up7 ← ranker.calc_metrics,meta JSON (rank_full透传但主流程评分不用),否(scoring_v3 dual_score不用up7),是(is_candidate稳涨形态/reco_score结构分/composite_score趋势+稳健分),否(md_builder不读up7),形态,7日内上涨天数; 仅旧版is_candidate/reco_score/composite_score使用; rank_full meta包含但scoring_v3不用; 注释明确标注'必须保留'因旧版引用,需确认
+max_daily_drop_7d,rank_full_meta,metrics.max_daily_drop_7d ← ranker.calc_metrics,meta JSON; funds.max_daily_drop_7d列,是(_anti_score_simple降级兜底),是(is_candidate/composite_score支撑分),否(md_builder读dd7别名),风险,"7日内最大单日跌幅, 抗跌分降级兜底+旧版形态筛选",保留
+max_daily_drop,rank_full_meta,metrics.max_daily_drop ← ranker.calc_metrics,meta JSON,是(scoring_v3 ad_score输入),是,是(compare总结),风险,"历史最大单日跌幅, scoring_v3抗跌分输入",保留
+mdd,rank_full_meta,metrics.mdd ← ranker.calc_metrics,meta JSON; funds.mdd列,是(质量榜/攻防榜筛选/scoring_v3),是,是,风险,"最大回撤, 质量榜/攻防榜强抗跌筛选/scoring_v3 ad_score",保留
+dd_from_hi,rank_full_meta,metrics.dd_from_hi ← ranker.calc_metrics,meta JSON; funds.dd_from_hi列,是(攻防榜/质量榜),是(别名dd20),"否(md_builder读dd20别名,不读dd_from_hi)",风险,"距历史高点回撤; 注意md_builder读旧名dd20, rank_full meta用标准名dd_from_hi → md_builder中此字段恒为None",需确认
+hi_cnt,rank_full_meta,metrics.hi_cnt ← ranker.calc_metrics,meta JSON; funds.hi_cnt列,是,是,是(compare结构段),风险,"创新高次数, compare'结构'段展示",保留
+vol,rank_full_meta,metrics.vol ← ranker.calc_metrics,meta JSON; funds.vol列,是,是,是,风险,"年化波动率, 卡片/对比展示",保留
+down_vol,rank_full_meta,metrics.down_vol ← ranker.calc_metrics,meta JSON; funds.down_vol列,是(攻防榜强抗跌筛选/scoring_v3 ad_score),是,是,风险,"下行波动率, 攻防榜强抗跌筛选+scoring_v3 ad_score输入",保留
+down_sharpe,rank_full_meta,metrics.down_sharpe ← ranker.calc_metrics,meta JSON; funds.down_sharpe列,是(质量榜第一因子30%),是,是,风险,"下行夏普比率, 质量榜核心因子(30%权重)",保留
+calmar,rank_full_meta,metrics.calmar ← ranker.calc_metrics,meta JSON; funds.calmar列,是(质量榜第二因子25%),是,是,风险,"卡玛比率, 质量榜因子(25%权重)+scoring_v3 dual_score 15%",保留
+pl,rank_full_meta,metrics.pl ← ranker.calc_metrics,meta JSON; funds.pl列,是,是,是(compare盈亏比),风险,"盈亏比, compare'结构'段展示",保留
+up_ratio,rank_full_meta,metrics.up_ratio ← ranker.calc_metrics,meta JSON,是,是,是(compare上涨天数占比),风险,"上涨天数占比, compare展示; 注释明确'前端在用,保留'",保留
+up_capture,rank_full_meta,metrics.up_capture ← ranker.calc_metrics,meta JSON,是(攻防榜高弹性筛选/质量榜),是,是(compare),风险,"上涨捕获率, 攻防榜高弹性筛选+质量榜因子(15%)",保留
+dn_capture,rank_full_meta,metrics.dn_capture ← ranker.calc_metrics,meta JSON,是(攻防榜攻守兼备/强抗跌筛选/质量榜),是,是(compare),风险,"下跌捕获率, 攻防榜强抗跌筛选+质量榜因子(15%)",保留
+streak,rank_full_meta,metrics.streak ← ranker.streak_days(navs),meta JSON; funds.streak列,是,是,是(连涨N日标签),形态,"连涨天数, 卡片'连涨N日'标签",保留
+reco,rank_full_meta,f.get('reco') ← funds.reco (recompute_ad计算),meta JSON; funds.reco列,是(透传展示),是(开仓榜筛选),是(_reco_txt建议标签),评分,"推荐建议(买入/布局/试探/观望/回避), 卡片信号标签",保留
+reco_days,rank_full_meta,f.get('reco_days') ← funds.reco_days,meta JSON; funds.reco_days列,是(透传+_fill_listed_profiles回写),是,是(_reco_txt),评分,"当前建议持续天数, 配合reco展示'买入2天'",保留
+prev_reco,rank_full_meta,f.get('prev_reco') ← funds.prev_reco,meta JSON; funds.prev_reco列,是(透传),是,是(_reco_txt变化展示),评分,"上一期建议, 展示'观望10天→买入2天'变化",保留
+prev_reco_days,rank_full_meta,f.get('prev_reco_days') ← funds.prev_reco_days,meta JSON; funds.prev_reco_days列,是(透传),是,是(_reco_txt),评分,上一期建议持续天数,保留
+themes,rank_full_meta,f.get('themes') ← funds.themes (JSON解析),meta JSON; funds.themes列(JSON字符串),是,是,是(🧭主题标签),基础信息,"持仓主题列表[{name,pct}], 卡片主题标签",保留
+is_etf,rank_full_meta,f.get('is_etf') ← funds.is_etf,meta JSON; funds.is_etf列,是(ETF去重/超跌筑底/攻防榜技术形态),是,否(md_builder不直接读is_etf),基础信息,"是否ETF/指数基金, 多处去重和筛选逻辑依赖",保留
+etf_abbr,rank_full_meta,_etf_abbr_of(f) ← collector.etf_abbr.etf_short_label(name)实时抽取,meta JSON (无DB列),是(前端ETF简称展示),否,否,基础信息,"ETF简称, 从名称实时抽取无DB列; 仅rank_full和fund/router读取",保留
+nav_date,rank_full_meta,f.get('nav_date') ← funds.nav_date,meta JSON; funds.nav_date列,是(日榜池子筛选nav_date==latest),是,否,基础信息,"最新净值日期, 日榜数据池筛选核心",保留
+nav,rank_full_meta,(f.get('navs') or [None])[-1] ← nav_history最新dwjz,meta JSON; funds.nav列,是(透传),是,否,基础信息,"最新单位净值, 卡片展示; 注意pipeline写入时fallback到ret2m疑似bug",需确认
+sec,rank_full_meta,f.get('sec') ← funds.sec,meta JSON; funds.sec列,是(板块去重/sec_m5_map/抗跌池),是,是(📌板块标签),基础信息,"行业板块分类, ETF去重+板块景气+卡片标签",保留
+ftype,rank_full_meta,f.get('ftype') ← funds.ftype,meta JSON; funds.ftype列,是(质量榜C类筛选/抗跌池is_equity_excluded),是,是(〔类型〕),基础信息,"基金类型(主动C/ETF联接C等), 质量榜筛选C类",保留
+scale,rank_full_meta,f.get('scale') ← funds.scale (_fill_listed_profiles补齐),meta JSON; funds.scale列,是(risk标签/reco_score/质量榜),是,是(规模X亿),基础信息,"基金规模(亿), risk标签'规模偏小'+reco_score流动性因子",保留
+est,rank_full_meta,f.get('est') ← funds.est (_fill_listed_profiles补齐),meta JSON; funds.est列,是(risk标签'次新基金'),是,是(成立YYYY-MM-DD),基础信息,"成立日期, risk标签'次新基金'+卡片展示",保留
+manager,rank_full_meta,f.get('manager') ← funds.manager (_fill_listed_profiles补齐),meta JSON; funds.manager列,是(透传),否,否,基础信息,"基金经理, 仅展示; _fill_listed_profiles对上榜基金补齐",保留
+track,rank_full_meta,"f.get('track') ← funds.track (_fill_listed_profiles补齐,仅ETF)",meta JSON; funds.track列,"是(透传,仅ETF)",否,否,基础信息,"跟踪指数(仅ETF/指数基金), _fill_listed_profiles对ETF补齐",保留
+board_days,rank_full_meta,f.get('board_days') ← _prev_boards(conn)从rank_snapshots历史推算,meta JSON,是(在榜N天展示),是,否,其他,"连续在榜天数, 卡片'在榜N天'标签",保留
+cros,rank_full_meta,compute_all_panels中日榜五期交叉排名生成'🏅同榜 当日#3·两日#5',meta JSON,是(同榜提醒),是,是(🏅同榜),其他,"同榜交叉排名提醒, 前端/md_builder展示",保留
+risk,rank_full_meta,"f.get('risk') 降级 reco_risk_tags_txt(m, scale, est)现算",meta JSON,是(风险标签),是(risk_flags),是(风险xxx),风险,"风险标签文本(规模偏小/次新基金等), 卡片展示",保留
+rank_count,rank_full_meta,_compute_day_panels综合榜: 日榜四期上榜次数统计,meta JSON (仅综合榜),是(综合榜排序+展示),否,否,其他,"综合榜上榜次数, 仅综合榜item有此字段",保留
+crash_level,rank_full_meta,_compute_crash_bottom_panel: 急跌信号数→重度/中度/轻度急跌,meta JSON (仅超跌筑底榜),是(超跌筑底榜展示),否,否,形态,"急跌强度分级, 超跌筑底榜专属",保留
+bottom_stage,rank_full_meta,_compute_crash_bottom_panel: 筑底六阶段判定,meta JSON (仅超跌筑底榜),是(超跌筑底榜展示),否,否,形态,"筑底阶段(已反弹/反弹后回调/低位震荡等), 超跌筑底榜专属",保留
+ret_20d,rank_full_meta,_compute_crash_bottom_panel: nav_history现算20日收益,meta JSON (仅超跌筑底榜),是(超跌筑底榜排序+展示),否,否,收益,"近20日收益, 超跌筑底榜急跌判定+展示",保留
+ret_60d,rank_full_meta,_compute_crash_bottom_panel: nav_history现算60日收益,meta JSON (仅超跌筑底榜),是(超跌筑底榜同分排序),否,否,收益,"近60日收益, 超跌筑底榜同分排序键",保留
+dd_from_high,rank_full_meta,_compute_crash_bottom_panel: current_nav/high_60-1 (60日高点),meta JSON (仅超跌筑底榜),是(超跌筑底榜低位判定+展示),否,否,风险,"距60日高点回撤, 注意与dd_from_hi(距历史高点)命名相近但含义不同",需确认
+percentile,rank_full_meta,_compute_crash_bottom_panel: 60日净值分位(0%=最低),meta JSON (仅超跌筑底榜),是(超跌筑底榜低位判定+展示),否,否,形态,"60日净值分位, 超跌筑底榜低位筛选",保留
+rps_20d,rank_full_meta,_compute_crash_bottom_panel: 20日收益相对强度百分位,meta JSON (仅超跌筑底榜),是(超跌筑底榜RPS弱势筛选+加分),否,否,形态,"20日RPS相对强度, 超跌筑底榜专属",保留
+rps_60d,rank_full_meta,_compute_crash_bottom_panel: 60日收益相对强度百分位,meta JSON (仅超跌筑底榜),是(超跌筑底榜RPS入榜阈值+评分),否,否,形态,"60日RPS相对强度, 超跌筑底榜入榜阈值(<30%)",保留
+ma_converged,rank_full_meta,_compute_crash_bottom_panel: tech_indicators.is_ma_converged(MA5/10/20差距<2%),meta JSON (仅超跌筑底榜),是(超跌筑底榜低位震荡额外加分),否,否,形态,"均线粘合判定, 超跌筑底榜低位震荡加分项",保留
+code,funds_table,采集器fetcher从天天基金/蛋卷获取,funds.code (PK),是,是,是,基础信息,"主键, 全系统关联",保留
+name,funds_table,采集器fetcher获取,funds.name,是,是,是,基础信息,"同层面1meta字段, funds列为持久化存储",保留
+ftype,funds_table,采集器fetcher/f10 jbgk获取,funds.ftype,是,是,是,基础信息,"同层面1meta字段, funds列为持久化存储",保留
+scale,funds_table,pingzhongdata获取; _fill_listed_profiles补齐,funds.scale,是,是,是,基础信息,"同层面1meta字段, funds列为持久化存储",保留
+est,funds_table,f10 jbgk获取; _fill_listed_profiles补齐,funds.est,是,是,是,基础信息,"同层面1meta字段, funds列为持久化存储",保留
+manager,funds_table,pingzhongdata获取; _fill_listed_profiles补齐(缺了才补),funds.manager,是(仅上榜基金补齐),否,否,基础信息,仅_fill_listed_profiles对上榜基金补齐; 全量6000只中大量NULL; 前端基金详情展示,保留
+track,funds_table,"f10 jbgk获取; _fill_listed_profiles补齐(仅ETF,缺了才补)",funds.track,是(仅ETF上榜基金),否,否,基础信息,仅ETF/指数基金有值; _fill_listed_profiles对主动基金跳过track补齐,保留
+sec,funds_table,采集器classifier板块分类,funds.sec,是,是,是,基础信息,"同层面1meta字段, funds列为持久化存储",保留
+themes,funds_table,采集器持仓主题估算(JSON字符串),funds.themes (JSON字符串),是,是,是,基础信息,"同层面1meta字段, funds列为持久化存储",保留
+stocks,funds_table,采集器重仓股(JSON字符串),funds.stocks (JSON字符串),否(rank_full不读stocks),否,否,基础信息,"重仓股列表, 仅基金详情/市场模块使用; rank_full主流程不读取",保留
+is_etf,funds_table,采集器按名称+ftype推断; pipeline兜底判定,funds.is_etf,是,是,否,基础信息,"同层面1meta字段, funds列为持久化存储",保留
+score,funds_table,recompute_ad: earn*0.5+ad*0.5 (旧版50/50); scoring_v3 dual_score为42.5/42.5/15,funds.score,是(_build_item降级读取),是,是,评分,recompute_ad写入50/50综合分; 但_build_item优先用_unified dual(scoring_v3 42.5/42.5/15); 存在两套权重不一致,需确认
+ad_score,funds_table,recompute_ad: scoring_v3 compute_ad_score,funds.ad_score,是,是,是,评分,"同层面1meta字段, funds列为持久化存储",保留
+earn_score,funds_table,recompute_ad: scoring_v3 compute_earn_score,funds.earn_score,是,是,是,评分,"同层面1meta字段, funds列为持久化存储",保留
+tscore,funds_table,无任何模块显式写入! bulk_upsert字段列表包含但pipeline/recompute_ad均不传值→恒NULL,funds.tscore,否(恒NULL),否,否,评分,死列! 无写入方; meta中的tscore是运行时计算不回写funds; 可安全删除列,删除
+calmar_score,funds_table,无任何模块显式写入! bulk_upsert字段列表包含但均不传值→恒NULL,funds.calmar_score,否(恒NULL),否,否,评分,"死列! 无写入方; scoring_v3有calmar_score概念但仅存在于_UNIFIED_SCORE_CACHE内存,不回写funds",删除
+verdict,funds_table,pipeline写None; recompute_ad不写; 仅recompute_ranks(旧版)写verdict_of(),funds.verdict,否(pipeline写None),是(recompute_ranks),否,评分,"死列! 主流程pipeline显式写None, recompute_ad不更新; 仅旧版recompute_ranks写入; rendering/field_dict有定义但无实际数据",删除
+suggest,funds_table,pipeline写{}; 无其他模块写入,funds.suggest (JSON字符串),否(pipeline写{}),否,否,评分,pipeline写空dict{}; fund_service/watch_fetch读取但内容恒为空; 疑似遗留字段,需确认
+nav,funds_table,"pipeline: fm['navs'][-1] (fallback m.get('ret2m')疑似bug); recompute_ad: COALESCE(?,nav)",funds.nav,"是(_build_item从navs取,不从funds.nav读)",是,否,基础信息,pipeline写入时else分支fallback到ret2m明显错误; rank_full._build_item从f['navs'][-1]取而非funds.nav; funds.nav列实际使用方需确认,需确认
+nav_date,funds_table,pipeline: fm['dates'][-1]; bulk_upsert_navs末尾同步,funds.nav_date,是(日榜池子筛选),是,否,基础信息,"同层面1meta字段, funds列为持久化存储",保留
+d1,funds_table,pipeline: metrics.d1; recompute_ad覆盖d3/d5/d7/d10/m1(COALESCE),funds.d1,是,是,是,收益,"同层面1meta字段, funds列为持久化存储",保留
+d2,funds_table,pipeline: metrics.d2; recompute_ad覆盖d3/d5/d7/d10/m1(COALESCE),funds.d2,是,是,是,收益,"同层面1meta字段, funds列为持久化存储",保留
+d3,funds_table,pipeline: metrics.d3; recompute_ad覆盖d3/d5/d7/d10/m1(COALESCE),funds.d3,是,是,是,收益,"同层面1meta字段, funds列为持久化存储",保留
+d5,funds_table,pipeline: metrics.d5; recompute_ad覆盖d3/d5/d7/d10/m1(COALESCE),funds.d5,是,是,是,收益,"同层面1meta字段, funds列为持久化存储",保留
+d7,funds_table,pipeline: metrics.d7; recompute_ad覆盖d3/d5/d7/d10/m1(COALESCE),funds.d7,是,是,是,收益,"同层面1meta字段, funds列为持久化存储",保留
+d10,funds_table,pipeline: metrics.d10; recompute_ad覆盖d3/d5/d7/d10/m1(COALESCE),funds.d10,是,是,是,收益,"同层面1meta字段, funds列为持久化存储",保留
+m1,funds_table,pipeline: metrics.m1; recompute_ad覆盖d3/d5/d7/d10/m1(COALESCE),funds.m1,是,是,是,收益,"同层面1meta字段, funds列为持久化存储",保留
+m3,funds_table,pipeline: metrics.m3; recompute_ad覆盖d3/d5/d7/d10/m1(COALESCE),funds.m3,是,是,是,收益,"同层面1meta字段, funds列为持久化存储",保留
+m6,funds_table,pipeline: metrics.m6; recompute_ad覆盖d3/d5/d7/d10/m1(COALESCE),funds.m6,是,是,是,收益,"同层面1meta字段, funds列为持久化存储",保留
+y1,funds_table,pipeline: metrics.y1; recompute_ad覆盖d3/d5/d7/d10/m1(COALESCE),funds.y1,是,是,是,收益,"同层面1meta字段, funds列为持久化存储",保留
+max_daily_drop_7d,funds_table,pipeline: metrics.max_daily_drop_7d; recompute_ad覆盖mdd/mdd_days/mdd_status/down_vol,funds.max_daily_drop_7d,是,是,否,风险,"同层面1meta字段, funds列为持久化存储",保留
+dn7,funds_table,pipeline: metrics.dn7; recompute_ad覆盖mdd/mdd_days/mdd_status/down_vol,funds.dn7,是,是,否,形态,"同层面1meta字段, funds列为持久化存储",保留
+ms,funds_table,pipeline: metrics.ms; recompute_ad覆盖mdd/mdd_days/mdd_status/down_vol,funds.ms,是,是,否,形态,"同层面1meta字段, funds列为持久化存储",保留
+dd20,funds_table,pipeline: metrics.dd20; recompute_ad覆盖mdd/mdd_days/mdd_status/down_vol,funds.dd20,是,是,否,风险,"同层面1meta字段, funds列为持久化存储",保留
+mdd,funds_table,pipeline: metrics.mdd; recompute_ad覆盖mdd/mdd_days/mdd_status/down_vol,funds.mdd,是,是,是,风险,"同层面1meta字段, funds列为持久化存储",保留
+mdd_days,funds_table,pipeline: metrics.mdd_days; recompute_ad覆盖mdd/mdd_days/mdd_status/down_vol,funds.mdd_days,是,是,否,风险,"同层面1meta字段, funds列为持久化存储",保留
+mdd_status,funds_table,pipeline: metrics.mdd_status; recompute_ad覆盖mdd/mdd_days/mdd_status/down_vol,funds.mdd_status,是,是,否,风险,"同层面1meta字段, funds列为持久化存储",保留
+vol,funds_table,pipeline: metrics.vol; recompute_ad覆盖mdd/mdd_days/mdd_status/down_vol,funds.vol,是,是,否,风险,"同层面1meta字段, funds列为持久化存储",保留
+down_vol,funds_table,pipeline: metrics.down_vol; recompute_ad覆盖mdd/mdd_days/mdd_status/down_vol,funds.down_vol,是,是,否,风险,"同层面1meta字段, funds列为持久化存储",保留
+down_sharpe,funds_table,pipeline: metrics.down_sharpe; recompute_ad覆盖mdd/mdd_days/mdd_status/down_vol,funds.down_sharpe,是,是,否,风险,"同层面1meta字段, funds列为持久化存储",保留
+calmar,funds_table,pipeline: metrics.calmar; recompute_ad覆盖mdd/mdd_days/mdd_status/down_vol,funds.calmar,是,是,否,风险,"同层面1meta字段, funds列为持久化存储",保留
+pl,funds_table,pipeline: metrics.pl; recompute_ad覆盖mdd/mdd_days/mdd_status/down_vol,funds.pl,是,是,是,风险,"同层面1meta字段, funds列为持久化存储",保留
+hi_cnt,funds_table,pipeline: metrics.hi_cnt; recompute_ad覆盖mdd/mdd_days/mdd_status/down_vol,funds.hi_cnt,是,是,是,风险,"同层面1meta字段, funds列为持久化存储",保留
+dd_from_hi,funds_table,pipeline: metrics.dd_from_hi; recompute_ad覆盖mdd/mdd_days/mdd_status/down_vol,funds.dd_from_hi,是,是,否,风险,"同层面1meta字段, funds列为持久化存储",保留
+streak,funds_table,pipeline: metrics.streak; recompute_ad覆盖mdd/mdd_days/mdd_status/down_vol,funds.streak,是,是,否,形态,"同层面1meta字段, funds列为持久化存储",保留
+dd20,funds_table,pipeline: m.get('dd_from_hi') (别名写入),funds.dd20,"否(rank_full用dd_from_hi,不用dd20)",是(build_ranks item读dd20),是(md_builder读it.get('dd20')),风险,dd_from_hi的旧别名; funds表有独立列但pipeline写的是dd_from_hi的值; md_builder从meta读dd20但rank_full meta不含dd20→恒None; compare从funds表读dd20(有值),需确认
+reco,funds_table,recompute_ad: 75天精确回放计算,funds.reco,是,是,是,评分,"同层面1meta字段, funds列为持久化存储",保留
+reco_score,funds_table,recompute_ad: 75天精确回放计算,funds.reco_score,否(rank_full仅透传),是,是,评分,recompute_ad计算六维推荐分; rank_full仅透传不计算; md_builder fallback,需确认
+reco_days,funds_table,recompute_ad: 75天精确回放计算,funds.reco_days,是,是,是,评分,"同层面1meta字段, funds列为持久化存储",保留
+prev_reco,funds_table,recompute_ad: 75天精确回放计算,funds.prev_reco,是,是,是,评分,"同层面1meta字段, funds列为持久化存储",保留
+prev_reco_days,funds_table,recompute_ad: 75天精确回放计算,funds.prev_reco_days,是,是,是,评分,"同层面1meta字段, funds列为持久化存储",保留
+yindie,funds_table,recompute_ad: detect_yindie_deep阴跌/深调识别; pipeline不写(v2.10.0注释),funds.yindie,否(rank_full不读yindie),是(build_ranks item透传),否,风险,"阴跌/进行中深调标记; v2.10.0后pipeline不写入, recompute_ad对上榜+自选基金写入; rank_full meta不含此字段",需确认
+updated_at,funds_table,pipeline: _today()每次采集更新,funds.updated_at,是(数据新鲜度判断),否,否,其他,"最后更新时间戳, 系统路由/监控使用",保留
+cs,legacy,recompute_ranks: ranker.composite_score(m); build_ranks item中f.get('cs'),无DB列; 仅legacy meta JSON,否(rank_full meta不含cs),是(build_ranks item/md_builder fallback),是(md_b多处it.get('cs') fallback),评分,旧版综合分(composite_score趋势40+支撑30+稳健20+平衡10); rank_full用tscore/score替代; md_builder中作为最后fallback但rank_full meta无cs→恒None,删除
+dn_ratio,legacy,ranker.calc_metrics L111计算; ranking.build_ranks item透传,无DB列; rank_full meta已删除(v0.93.0注释),否(rank_full._build_item已删除),是(build_ranks item L149),否,风险,"下跌天数占比(down_ratio); rank_full v0.93.0已从meta删除并注释'零引用'; 但compare.py L164/L192仍在读取(从_calc_merge和funds表, funds无此列→None); ranker.calc_metrics仍在计算",删除
+dd7,legacy,无计算函数; md_builder中it.get('dd7')读取(应为max_daily_drop_7d的旧别名),无DB列; 仅md_builder读取,否(rank_full meta不含dd7),否(build_ranks item也不含dd7),是(md_builder _fund_line/_day_line等5处读dd7),风险,旧版'7日回撤'字段名; build_ranks item和rank_full meta均不含dd7(用max_daily_drop_7d); md_builder中5处读取但恒为None; 纯死代码读取,删除
+rzf,legacy,rank_full._metrics_for: m['rzf']=m['d1'](日涨幅别名); ranking.build_ranks item d1 fallback,无DB列,是(rank_full._metrics_for中设置rzf=d1),是(build_ranks item _d1_fb fallback到rzf),否,收益,日涨幅别名(日涨幅=rzf); rank_full中设置m['rzf']=m['d1']但_build_item读d1不读rzf; 仅legacy build_ranks的d1 fallback使用; 可合并到d1,合并
+rtag,legacy,无计算; ranking.build_ranks和rank_full._build_item均已删除(注释恒为None),无DB列,否(已删除),否(已删除),否(card_renderer L323有elif d.get('rtag')保护),其他,v0.93.0已从两个item函数删除; 注释明确'自上线起恒为None纯占位'; card_renderer有保护性读取不影响,删除
+status,legacy,无计算; 同rtag已删除,无DB列,否(已删除),否(已删除),否,其他,"同rtag, v0.93.0已删除; 注意与data_status/status等其他同名变量区分",删除
+yindie_detail,legacy,recompute_ranks: yindie.get(c)[1]详情dict,无DB列; 仅recompute_ranks内存,否,是(recompute_ranks L119),否,风险,"阴跌详情dict, 仅recompute_ranks旧版脚本使用; 不写入任何表也不传入build_ranks item",删除
+sharpe,legacy,ranking.watch_score_light: 从metrics或navs现算; compare _build_summary展示,无funds列,"否(rank_full不用sharpe,用down_sharpe/calmar)",是(watch_score_light夏普9分),是(compare总结'夏普比率'),风险,夏普比率; watch_score_light(自选榜评分)使用; compare总结展示(从fund_detail stats取); 注意与down_sharpe(下行夏普)不同,需确认
+max_dn,legacy,algo_config配置键; scoring_v3中可能引用; 大量_*.py迁移脚本,无DB列,否,否,否,风险,"经grep仅algo_config.py和scoring_v3.py及临时迁移脚本出现; 非数据字段,可能是配置参数名; 需确认scoring_v3中是否实际使用",需确认
+build_ranks(),legacy,modules/rank/ranking.py L111定义; collector/ranking.py re-export,无,否(fetch_manager调用rank_full.compute_all_panels),是(仅scripts/recompute_ranks.py L139调用),否(md_builder读rank_snapshots不区分来源),评分,旧版榜单构建主入口; 仅recompute_ranks.py调用; pipeline L831注释'不再调用ranker.build_ranks',删除
+watch_score_light(),legacy,modules/rank/ranking.py L39定义,无,是! rank_full._compute_reco_panels自选榜调用ranker.panel_score('自选算法榜单')→watch_score_light,是,否,评分,自选榜评分算法(中长期35+近期25+回撤15+波动16+夏普9); 虽在legacy模块但被主流程自选榜调用; 不可删除,保留
+panel_score(),legacy,modules/rank/ranking.py L84定义,无,是(自选榜调用'自选算法榜单'分支),是(稳涨/强趋势/ETF/抗跌/开仓分支),否,评分,面板特定综合分分发器; 主流程只用'自选算法榜单'分支; 稳涨/强趋势/ETF/开仓分支仅旧版build_ranks使用,需确认
+composite_score(),legacy,modules/score/scoring.py L322定义; collector/scoring.py re-export,无,否(rank_full不调用composite_score),是(panel_score稳涨/强趋势/ETF分支; recompute_ranks L102),否,评分,"旧版综合分(趋势40+支撑30+稳健20+平衡10); 仅panel_score的稳涨/强趋势/ETF分支调用,而这些面板在rank_full中已不存在; 纯旧版死代码",删除
+is_candidate(),legacy,modules/rank/recommendation.py L362定义,无,否(rank_full不调用is_candidate),是(build_ranks L238趋势候选筛选),否,形态,形态候选筛选(稳涨/连涨/强趋势任一); 仅build_ranks使用; rank_full的超跌筑底/攻防榜有自己独立的筛选逻辑; up7仅在此函数和reco_score/composite_score中使用,删除
+up_cap,compare,anti_detail._calc_merge计算上涨捕获率(短名),无DB列; compare L155映射为up_capture,是(compare内部),否,否,风险,"_calc_merge返回的短名; compare L155-157映射up_cap→up_capture, dn_cap→dn_capture; 中间变量",合并
+dn_cap,compare,anti_detail._calc_merge计算下跌捕获率(短名),无DB列; compare L157映射为dn_capture,是(compare内部),否,否,风险,"同up_cap, 中间短名变量",合并
+r1m,compare,compare L166: st['r1m']=cm.get('m1'),无DB列; compare内部stats,是(compare内部),否,否,收益,compare内部别名r1m=m1(近1月收益); fund_detail也使用; 不写入meta/DB,合并
+r2w,compare,compare L167: st['r2w']=cm.get('d10'),无DB列; compare内部stats,是(compare内部),否,否,收益,compare内部别名r2w=d10(近2周); 不写入meta/DB,合并
+r5d,compare,compare L168: st['r5d']=cm.get('d5'),无DB列; compare内部stats,是(compare内部),否,否,收益,compare内部别名r5d=d5(近5日); 不写入meta/DB,合并
+pl_txt,compare,anti_detail._calc_merge计算盈亏比文本,无DB列; compare L159注入stats,是(compare内部),否,否,风险,"盈亏比文本描述; compare内部使用, 不写入meta/DB",保留
+repair_tag,compare,anti_detail._calc_merge计算修复标签,无DB列; compare L161/L173注入,是(compare内部+rs),否,否,风险,大跌后修复标签; compare内部使用,保留
+dn_ratio(compare),compare,compare L164: cm.get('dn_ratio'); L192: f.get('dn_ratio')从funds表,无funds列! rank_full meta已删除,否(funds表无dn_ratio列→L192恒None),否,否,风险,"compare L164从_calc_merge取(可能有值), L192从funds表取(无此列→恒None); rank_full meta不含此字段; 对比页面下跌天数占比可能展示异常",需确认

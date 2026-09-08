@@ -1,0 +1,225 @@
+# invest-v281 后端字段生命周期审计摘要
+# 生成时间: 2026-09-08
+# 审计范围: rank_full meta / funds表 / 旧版链路 / compare链路
+
+================================================================================
+1. 总字段数统计
+================================================================================
+
+| 层面 | 字段数 | 说明 |
+|------|--------|------|
+| rank_full_meta | 65 | _build_item基础字段55 + 超跌筑底榜额外10 |
+| funds_table | 53 | funds表52列 + dd20别名单独标注(实际52物理列) |
+| legacy | 14 | 旧版链路特有字段/函数 |
+| compare | 8 | compare链路内部别名/中间变量 |
+| **合计(去重前)** | **140** | 同一字段在多层面出现时分别审计 |
+
+去重后唯一字段名约 110 个。
+
+按建议分类:
+- 保留: 107 个
+- 需确认: 15 个
+- 删除: 12 个
+- 合并: 6 个
+
+================================================================================
+2. 确认可删除的死代码字段清单
+   (只在旧版ranking/scoring/md_builder中出现, 主流程rank_full和scoring_v3完全不用)
+================================================================================
+
+【funds表死列 - 可安全DROP】
+1. tscore        - 无任何模块显式写入, bulk_upsert字段列表包含但pipeline/recompute_ad均不传值→恒NULL
+2. calmar_score  - 同上, 无写入方; scoring_v3的calmar_score仅存在于内存缓存_UNIFIED_SCORE_CACHE
+3. verdict       - pipeline显式写None, recompute_ad不更新; 仅旧版recompute_ranks写入verdict_of()
+
+【meta/中间字段死代码 - 可安全删除】
+4. cs            - 旧版composite_score综合分; rank_full meta不含cs; md_builder中作为fallback但恒None
+5. dn_ratio      - rank_full v0.93.0已从meta删除(注释"零引用"); ranker.calc_metrics仍在计算但无消费方;
+                   compare.py L164/L192读取但funds表无此列→恒None
+6. dd7           - md_builder中5处it.get('dd7')读取, 但build_ranks和rank_full的item均不含dd7
+                   (用max_daily_drop_7d); 恒None, 纯死读取
+7. rtag          - v0.93.0已从两个item函数删除, 注释"自上线起恒为None纯占位"; card_renderer有保护读取
+8. status        - 同rtag, v0.93.0已删除(注意与data_status等其他同名变量区分)
+9. yindie_detail - 仅recompute_ranks旧版脚本内存使用, 不写表不传item
+
+【旧版函数死代码 - 可安全删除】
+10. composite_score() - scoring.py L322; 仅panel_score的稳涨/强趋势/ETF分支调用,
+                        这些面板在rank_full中已不存在; 纯旧版死代码
+11. is_candidate()    - recommendation.py L362; 仅build_ranks趋势候选筛选;
+                        rank_full有独立筛选逻辑; up7仅在此函数+reco_score+composite_score中使用
+12. build_ranks()     - ranking.py L111; 仅scripts/recompute_ranks.py调用;
+                        pipeline L831注释"不再调用ranker.build_ranks"
+
+================================================================================
+3. 需确认的字段清单 (引用复杂或有间接引用)
+================================================================================
+
+3.1 up7 - 7日内上涨天数
+    - rank_full._build_item包含up7(注释"必须保留"因旧版引用)
+    - 但scoring_v3 dual_score不用up7; rank_full主流程评分不依赖up7
+    - 仅旧版is_candidate(稳涨形态)、reco_score(结构分)、composite_score(趋势+稳健分)使用
+    - 若删除is_candidate/composite_score, up7仅reco_score使用
+    - reco_score被recompute_ad计算并写入funds.reco_score, rank_full透传
+    - **结论: up7本身需保留(metrics计算), 但meta中的up7可考虑删除(前端/md_builder不读)**
+
+3.2 reco_score - 六维推荐分
+    - recompute_ad计算并写入funds.reco_score
+    - rank_full._build_item透传到meta但不用于排序
+    - md_builder._reco_line作为tscore fallback第2顺位
+    - 旧版build_ranks开仓榜/推荐榜用于排序
+    - **结论: 需确认前端是否读取meta.reco_score; 若仅md_builder使用则随旧版废弃**
+
+3.3 dd20 vs dd_from_hi - 命名不一致
+    - funds表有独立dd20列, pipeline写入m.get('dd_from_hi')的值(别名)
+    - rank_full meta用标准名dd_from_hi, 不含dd20
+    - md_builder读it.get('dd20')→从rank_full meta取恒None
+    - compare.py从funds表读dd20→有值
+    - **结论: dd20是dd_from_hi的旧别名; funds列可合并; md_builder的dd20读取应改为dd_from_hi**
+
+3.4 dd_from_high (超跌筑底) vs dd_from_hi (标准)
+    - dd_from_high: 超跌筑底榜专用, 距60日高点回撤
+    - dd_from_hi: 标准字段, 距历史高点回撤
+    - 命名极近但含义不同, 易混淆
+    - **结论: 建议重命名为dd_from_60high以区分**
+
+3.5 nav列 - pipeline写入疑似bug
+    - pipeline L781: "nav": fm["navs"][-1] if fm.get("navs") else m.get("ret2m")
+    - else分支fallback到ret2m(近2月收益)明显错误, 应为None
+    - rank_full._build_item从f['navs'][-1]取nav, 不从funds.nav读
+    - **结论: 需确认funds.nav列的实际消费方; 修复pipeline fallback**
+
+3.6 suggest列
+    - pipeline写空dict{}
+    - fund_service/watch_fetch读取但内容恒为空
+    - **结论: 疑似遗留字段, 需确认是否有前端消费**
+
+3.7 yindie列
+    - v2.10.0后pipeline不写入
+    - recompute_ad对上榜+自选基金写入detect_yindie_deep结果
+    - rank_full meta不含yindie
+    - main.py有引用(需确认具体用途)
+    - **结论: 需确认yindie是否仍有前端展示需求**
+
+3.8 score列权重不一致
+    - recompute_ad写入 earn*0.5+ad*0.5 (旧版50/50)
+    - scoring_v3 dual_score = 收益42.5%+抗跌42.5%+卡玛15%
+    - rank_full._build_item优先用_unified dual(scoring_v3), 降级才用funds.score
+    - **结论: 需统一recompute_ad的score计算为scoring_v3 dual_score**
+
+3.9 panel_score()函数
+    - 主流程自选榜调用panel_score('自选算法榜单')→watch_score_light
+    - 稳涨/强趋势/ETF/抗跌/开仓分支仅旧版build_ranks使用
+    - **结论: 可精简为仅保留自选算法榜单分支, 其余随旧版删除**
+
+3.10 sharpe (普通夏普)
+    - watch_score_light使用(夏普9分)
+    - compare总结展示(从fund_detail stats取)
+    - 与down_sharpe(下行夏普)不同
+    - **结论: watch_score_light被主流程自选榜调用, sharpe需保留计算**
+
+3.11 max_dn
+    - 仅algo_config.py和scoring_v3.py出现(非数据字段,可能是配置参数)
+    - 大量_*.py临时迁移脚本引用
+    - **结论: 需确认scoring_v3中是否实际使用max_dn配置**
+
+3.12 dn_ratio在compare中的读取
+    - compare L164从_calc_merge取dn_ratio(可能有值)
+    - compare L192从funds表取dn_ratio(无此列→恒None)
+    - **结论: L192是死读取, 删除; L164需确认_calc_merge是否真的返回dn_ratio**
+
+3.13 manager/track列覆盖率
+    - 仅_fill_listed_profiles对上榜基金补齐
+    - 全量6000只中大量NULL
+    - **结论: 设计如此(按需补齐), 但需确认前端对未上榜基金展示是否降级**
+
+3.14 etf_abbr
+    - 无DB列, 从名称实时抽取
+    - 仅rank_full和fund/router使用
+    - **结论: 保留但需确认性能影响(每只上榜基金调用一次etf_short_label)**
+
+3.15 tstatus在rank_full中的覆盖率
+    - _build_item兜底逻辑: 入参→f._tstatus→ranker.trend_status(m)现算
+    - 但rank_full各面板不传tstatus, f._tstatus也不设置
+    - → 所有item都走trend_status(m)现算, 有性能开销
+    - **结论: 需确认tstatus是否仍有前端展示需求, 若无则可删除兜底计算**
+
+================================================================================
+4. 旧版链路整体废弃可行性结论
+   (ranking.build_ranks + scoring.composite_score + md_builder + html_service 整条链)
+================================================================================
+
+【结论: 可整体废弃, 但需分3步执行】
+
+步骤1: 确认前端不依赖静态HTML
+  - main.py L57导入fund_html_content用于首页静态渲染
+  - 用户实际使用Vue前端(http://127.0.0.1:8000/#/market)
+  - 需确认: 是否有外部用户/爬虫依赖 /api 或根路径的静态HTML
+  - 若确认无依赖, 可删除main.py中的fund_html_content导入和路由
+
+步骤2: 删除旧版榜单构建链
+  - ranking.build_ranks() → 仅recompute_ranks.py调用
+  - scoring.composite_score() → 仅panel_score旧分支调用
+  - recommendation.is_candidate() → 仅build_ranks调用
+  - panel_score()的稳涨/强趋势/ETF/抗跌/开仓分支 → 仅build_ranks调用
+  - 以上可整体删除, 保留watch_score_light(自选榜在用)和panel_score的自选分支
+
+步骤3: 删除静态渲染链
+  - html_service.fund_html_content() → 仅main.py调用
+  - md_builder.build_fund_markdown() → 仅html_service调用
+  - rendering/fund_page.py render_fund_view() → 仅html_service调用
+  - 若步骤1确认无依赖, 可整体删除rendering/目录和html_service.py
+
+【不可删除的部分】
+  - watch_score_light() → 主流程自选榜评分在用
+  - reco_score() → recompute_ad计算推荐分在用
+  - trend_status() → rank_full._build_item兜底在用
+  - momentum_status() → rank_full动能衰减预警在用
+  - reco_risk_tags_txt() → rank_full._build_item risk标签在用
+  - ranker.calc_metrics() → 全系统指标计算基础
+
+【风险提示】
+  - md_builder中dd20/dd7/cs等字段的死读取不影响功能, 但删除md_builder后这些读取自然消除
+  - rendering/card_renderer.py和rendering/markdown_parser.py可能被其他模块引用, 需单独确认
+  - db.py中save_rank/get_ranks/latest_rank_date等函数可能同时服务于Vue前端API, 不可删除
+
+================================================================================
+5. scripts/recompute_ranks.py 对旧版的依赖情况
+================================================================================
+
+recompute_ranks.py 是旧版重算脚本, 完全依赖旧版链路:
+
+【直接依赖】
+- L21: import collector.ranker as ranker → 导入build_ranks/composite_score/watch_score_light等
+- L22: from collector.pipeline import _prev_boards, _today
+- L61: ranker.calc_metrics() → 指标计算(新版也在用, 非旧版专属)
+- L102: ranker.composite_score(m) → 旧版综合分(可删除)
+- L111: ranker.compute_scores_v2() → 已迁移到scoring_v3, 但函数本身仍可用
+- L120: ranker.verdict_of() → 旧版持有结论(可删除)
+- L127: UPDATE funds SET ad_score/earn_score/score/verdict/yindie/mdd/... → 写入verdict(死列)
+- L139: ranker.build_ranks(funds_meta, prev_boards) → 旧版榜单构建(核心依赖)
+- L144: db.save_rank() → 写入rank_snapshots
+
+【与主流程的冲突】
+- recompute_ranks用build_ranks生成的meta包含cs/dn_ratio/dd20等旧字段
+- 主流程rank_full生成的meta不含这些字段
+- 若运行recompute_ranks会覆盖rank_full的榜单数据, 导致字段不一致
+- recompute_ranks的score用earn*0.5+ad*0.5, 与scoring_v3 dual_score(42.5/42.5/15)不一致
+
+【建议】
+- recompute_ranks.py应整体废弃或重写为调用rank_full.compute_all_panels()
+- 若需保留"算法变更后重算"功能, 应调用fetch_manager的一键更新流程而非旧版build_ranks
+- verdict列的写入应移除(死列)
+- composite_score调用应移除
+
+================================================================================
+附录: collector/ 与 modules/ 版本关系
+================================================================================
+
+经确认, collector/目录下的ranking.py/scoring.py/recommendation.py均为v2.5.5架构重构后的
+兼容层(re-export), 实际实现在modules/对应文件中:
+- collector/ranking.py → from modules.rank.ranking import *
+- collector/scoring.py → from modules.score.scoring import (具体函数)
+- collector/recommendation.py → from modules.rank.recommendation import *
+
+因此不存在"两套实现"问题, 主流程导入collector.ranker最终调用的是modules/中的实现。
+collector/ranker.py本身包含calc_metrics等核心指标函数(非re-export), 是真正的实现层。

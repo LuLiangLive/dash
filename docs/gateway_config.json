@@ -1,0 +1,488 @@
+{
+  "meta": {
+    "version": "1.0",
+    "description": "变更准入网关配置：节点架构映射 + 任务模板",
+    "last_updated": "2026-09-06",
+    "mandatory_rules_count": 5
+  },
+  "node_architecture_map": {
+    "change_gateway": {
+      "module": "变更准入网关",
+      "backend_files": [
+        "modules/system/router.py",
+        "modules/system/gateway_service.py"
+      ],
+      "frontend_files": [
+        "views/FunctionGraphView.vue"
+      ],
+      "data_files": [
+        "docs/function_graph.json",
+        "docs/change_history.json",
+        "docs/gateway_config.json"
+      ],
+      "description": "网关API和前端可视化，涉及变更记录存储和验证门逻辑"
+    },
+    "ui_design": {
+      "module": "UI设计规范",
+      "backend_files": [],
+      "frontend_files": [
+        "styles/index.scss",
+        "components/FundCard.vue"
+      ],
+      "data_files": [],
+      "description": "前端样式规范和组件统一，涉及CSS变量和组件设计"
+    },
+    "data_quality": {
+      "module": "数据质量校验",
+      "backend_files": [
+        "modules/common/data_quality.py",
+        "modules/common/pipeline.py"
+      ],
+      "frontend_files": [],
+      "data_files": [
+        "data/invest.db"
+      ],
+      "description": "净值数据质量检测，涉及抓取后的数据校验和suspect标记"
+    },
+    "one_click_update": {
+      "module": "一键更新",
+      "backend_files": [
+        "modules/common/pipeline.py",
+        "modules/nav/multi_source_fetcher.py"
+      ],
+      "frontend_files": [
+        "views/MineView.vue"
+      ],
+      "data_files": [
+        "data/invest.db"
+      ],
+      "description": "一键更新主流程，涉及净值抓取、指标计算、榜单排名"
+    },
+    "rank_calc": {
+      "module": "榜单计算",
+      "backend_files": [
+        "modules/rank/rank_full.py"
+      ],
+      "frontend_files": [
+        "views/FundView.vue"
+      ],
+      "data_files": [
+        "data/invest.db"
+      ],
+      "description": "各榜单算法计算，涉及指标评分和排名"
+    },
+    "fund_card": {
+      "module": "基金卡片",
+      "backend_files": [],
+      "frontend_files": [
+        "components/FundCard.vue",
+        "views/WatchView.vue",
+        "views/FundView.vue"
+      ],
+      "data_files": [],
+      "description": "基金卡片组件，自选和榜单共用，涉及样式和数据展示"
+    },
+    "fund_modal": {
+      "module": "基金详情弹窗",
+      "backend_files": [
+        "modules/common/compare.py",
+        "modules/nav/nav_series.py"
+      ],
+      "frontend_files": [
+        "components/FundDetailModal.vue"
+      ],
+      "data_files": [],
+      "description": "基金详情弹窗，涉及指标计算和历史净值展示"
+    },
+    "compare": {
+      "module": "基金对比",
+      "backend_files": [
+        "modules/common/compare.py"
+      ],
+      "frontend_files": [
+        "views/CompareView.vue",
+        "components/ComparePanel.vue"
+      ],
+      "data_files": [],
+      "description": "多基金对比，涉及指标对比和大涨大跌日分析"
+    },
+    "portfolio": {
+      "module": "持仓管理",
+      "backend_files": [
+        "modules/fund/holdings.py"
+      ],
+      "frontend_files": [
+        "views/PortfolioView.vue",
+        "components/portfolio/ProfitTargetSetting.vue",
+        "views/PortfolioAlertsView.vue"
+      ],
+      "data_files": [
+        "data/invest.db"
+      ],
+      "description": "持仓买入卖出、止盈提醒、分笔核算"
+    },
+    "watchlist": {
+      "module": "自选管理",
+      "backend_files": [],
+      "frontend_files": [
+        "views/WatchView.vue",
+        "stores/watch.ts"
+      ],
+      "data_files": [],
+      "description": "自选基金增删、对比选择、滑动操作"
+    },
+    "nav_fetch": {
+      "module": "净值抓取",
+      "backend_files": [
+        "modules/nav/fetcher.py",
+        "modules/nav/multi_source_fetcher.py"
+      ],
+      "frontend_files": [],
+      "data_files": [
+        "data/invest.db"
+      ],
+      "description": "多源净值抓取，同花顺主源+天天基金备源"
+    },
+    "metrics_calc": {
+      "module": "指标计算",
+      "backend_files": [
+        "modules/rank/rank_full.py",
+        "modules/common/compare.py"
+      ],
+      "frontend_files": [],
+      "data_files": [
+        "data/invest.db"
+      ],
+      "description": "夏普、索提诺、卡玛、最大回撤等风险收益指标计算"
+    },
+    "profit_alert": {
+      "module": "止盈提醒",
+      "backend_files": [
+        "modules/fund/holdings.py"
+      ],
+      "frontend_files": [
+        "components/portfolio/ProfitTargetSetting.vue",
+        "views/PortfolioAlertsView.vue"
+      ],
+      "data_files": [
+        "data/invest.db"
+      ],
+      "description": "13%止盈标准判断、已卖出标记、提醒展示"
+    },
+    "version_mgmt": {
+      "module": "版本控制",
+      "backend_files": [
+        "config.py"
+      ],
+      "frontend_files": [
+        "utils/version.ts"
+      ],
+      "data_files": [
+        "_pack.py"
+      ],
+      "description": "版本号管理，三处必须同步更新"
+    },
+    "market_page": {
+      "module": "市场行情",
+      "backend_files": [],
+      "frontend_files": [
+        "views/MarketView.vue"
+      ],
+      "data_files": [],
+      "description": "市场指数和板块行情展示"
+    },
+    "data_source": {
+      "module": "数据源管理",
+      "backend_files": [
+        "modules/nav/fetcher.py",
+        "modules/nav/multi_source_fetcher.py"
+      ],
+      "frontend_files": [],
+      "data_files": [
+        "data/invest.db"
+      ],
+      "description": "多数据源管理，同花顺API+天天基金爬虫"
+    },
+    "fund_universe": {
+      "module": "基金代码库",
+      "backend_files": [
+        "modules/common/pipeline.py"
+      ],
+      "frontend_files": [],
+      "data_files": [
+        "data/invest.db"
+      ],
+      "description": "全市场C类基金代码库构建，剔除债券/货币/持有期"
+    },
+    "holdings_fetch": {
+      "module": "持仓抓取",
+      "backend_files": [
+        "modules/fund/holdings.py"
+      ],
+      "frontend_files": [],
+      "data_files": [
+        "data/invest.db"
+      ],
+      "description": "持仓基金详情抓取，分笔核算"
+    },
+    "algo_config": {
+      "module": "算法配置",
+      "backend_files": [
+        "algo_config.py"
+      ],
+      "frontend_files": [
+        "views/MineView.vue"
+      ],
+      "data_files": [],
+      "description": "榜单算法阈值配置，前端可编辑"
+    },
+    "rank_page": {
+      "module": "榜单页面",
+      "backend_files": [],
+      "frontend_files": [
+        "views/FundView.vue"
+      ],
+      "data_files": [],
+      "description": "榜单展示页面，多Tab切换"
+    },
+    "watch_page": {
+      "module": "自选页面",
+      "backend_files": [],
+      "frontend_files": [
+        "views/WatchView.vue"
+      ],
+      "data_files": [],
+      "description": "自选基金列表，滑动操作，对比选择"
+    },
+    "compare_page": {
+      "module": "对比页面",
+      "backend_files": [],
+      "frontend_files": [
+        "views/CompareView.vue"
+      ],
+      "data_files": [],
+      "description": "多基金对比展示，大涨大跌日分析"
+    },
+    "portfolio_page": {
+      "module": "持仓页面",
+      "backend_files": [],
+      "frontend_files": [
+        "views/PortfolioView.vue"
+      ],
+      "data_files": [],
+      "description": "持仓管理页面，止盈提醒弹窗"
+    },
+    "mine_page": {
+      "module": "我的页面",
+      "backend_files": [],
+      "frontend_files": [
+        "views/MineView.vue"
+      ],
+      "data_files": [],
+      "description": "个人中心，一键更新，系统监控，版本信息"
+    },
+    "settings": {
+      "module": "设置页面",
+      "backend_files": [
+        "algo_config.py",
+        "config.py"
+      ],
+      "frontend_files": [
+        "views/MineView.vue"
+      ],
+      "data_files": [],
+      "description": "系统设置，算法阈值配置，API密钥管理"
+    },
+    "chain_doc": {
+      "module": "功能链文档",
+      "backend_files": [],
+      "frontend_files": [],
+      "data_files": [
+        "docs/function_graph.json",
+        "docs/change_history.json"
+      ],
+      "description": "功能神经网络文档，变更历史记录"
+    },
+    "system_monitor": {
+      "module": "系统监控",
+      "backend_files": [
+        "modules/monitor/router.py"
+      ],
+      "frontend_files": [
+        "views/MonitorView.vue"
+      ],
+      "data_files": [],
+      "description": "系统运行状态监控，API调用统计，限流告警"
+    },
+    "log_manager": {
+      "module": "日志管理",
+      "backend_files": [
+        "modules/logging/router.py",
+        "modules/logging/audit.py"
+      ],
+      "frontend_files": [],
+      "data_files": [],
+      "description": "操作日志审计，请求记录，异常追踪"
+    }
+  },
+  "task_templates": {
+    "encoding_safety": {
+      "category": "code",
+      "description": "编码安全：含中文文件(.vue/.py/.md)必须用Python脚本指定encoding=utf-8修改，禁止用PowerShell Set-Content",
+      "priority": "high",
+      "always": true
+    },
+    "refactor_safety": {
+      "category": "code",
+      "description": "重构安全：拆分/移动代码前先备份原文件到临时目录；禁止批量正则删除函数，必须逐函数操作；拆分后立即验证语法+所有API端点存在+调用链完整",
+      "priority": "high",
+      "change_types": [
+        "refactor"
+      ]
+    },
+    "data_check": {
+      "category": "data",
+      "description": "检查是否需要数据库表结构变更或数据迁移（如不涉及可直接标记完成）",
+      "priority": "medium",
+      "always": true
+    },
+    "doc_update": {
+      "category": "doc",
+      "description": "更新功能链文档/变更说明",
+      "priority": "medium",
+      "always": true
+    },
+    "architecture_read": {
+      "category": "doc",
+      "description": "阅读系统架构文档（backend/docs/SYSTEM_ARCHITECTURE.md），确认变更涉及的模块和文件",
+      "priority": "high",
+      "always": true
+    },
+    "graph_sync": {
+      "category": "graph",
+      "description": "更新功能神经网络：节点状态/版本/检查点/新增边",
+      "priority": "high",
+      "always": true
+    },
+    "version_bump": {
+      "category": "version",
+      "description": "升级三处版本号：backend/config.py(APP_VERSION) + src/utils/version.ts + _pack.py(VERSION)",
+      "priority": "high",
+      "always": true
+    },
+    "build_deploy": {
+      "category": "build",
+      "description": "构建前端(npm run build)并复制到backend/static，清理旧assets，验证页面可正常访问",
+      "priority": "high",
+      "always": true
+    },
+    "graph_code_files_check": {
+      "category": "graph",
+      "description": "验证神经网络节点的code_files路径：用Python脚本检查每个code_files是否真实存在（路径基准为项目根目录）",
+      "priority": "high",
+      "change_types": [
+        "graph_node_add",
+        "graph_node_modify"
+      ]
+    },
+    "graph_data_spec_check": {
+      "category": "graph",
+      "description": "对照graph_data_convention规范检查节点/边字段格式：id命名、version格式、status/verify_result/layer枚举值、known_issues字段结构、边的label必填",
+      "priority": "medium",
+      "change_types": [
+        "graph_node_add",
+        "graph_node_modify",
+        "graph_edge_add"
+      ]
+    }
+  },
+  "tech_stack": {
+    "frontend": "Vue 3 + Vite + TypeScript + Pinia + Naive UI + ECharts",
+    "backend": "Python + FastAPI + Uvicorn",
+    "database": "SQLite",
+    "build": "npm run build → dist/ → backend/static/"
+  },
+  "graph_data_convention": {
+    "node": {
+      "id": "小写+下划线，如 data_source、one_click_update",
+      "version": "统一不带v前缀，如 2.9.23（与config.py的APP_VERSION格式一致）",
+      "status": "枚举：healthy / warning / error / pending",
+      "verify_result": "枚举：pass / pending / needs_recheck",
+      "layer": "枚举：data / business / display / system",
+      "code_files": "统一从项目根目录开始，用/分隔，如 backend/modules/nav/fetcher.py、src/views/WatchView.vue",
+      "config_keys": "统一用config.py中的配置项名（小写），不用大写常量",
+      "check_points": "字符串数组，5-15个，每项是可验证的检查点",
+      "known_issues": {
+        "required_fields": [
+          "id",
+          "status",
+          "description",
+          "found_version"
+        ],
+        "optional_fields": [
+          "fixed_version",
+          "root_cause",
+          "solution",
+          "severity"
+        ],
+        "status_enum": [
+          "open",
+          "in_progress",
+          "resolved",
+          "reopened"
+        ]
+      }
+    },
+    "edge": {
+      "type": "枚举：data_flow / affects / call / test_related / dependency / ui_sync / doc_sync / constrains",
+      "label": "必填，简短描述边的含义",
+      "description": "可选，详细说明"
+    },
+    "non_propagating_edge_types": [
+      "constrains",
+      "doc_sync"
+    ]
+  },
+  "mandatory_rules": [
+    {
+      "id": "RULE-001",
+      "name": "功能修改必须先走变更准入网关",
+      "description": "所有功能修改、优化、新增、重构等变更，必须主动先走变更准入网关流程（影响范围分析 + 受影响节点检查 + 风险点识别 + 检查清单），不需要用户提醒。禁止跳过网关直接修改代码。",
+      "trigger": "任何涉及代码修改的功能变更",
+      "enforcement": "强制",
+      "created_at": "2026-09-06T14:28:04.161509"
+    },
+    {
+      "id": "RULE-002",
+      "name": "变更完成后必须记录到功能神经网络",
+      "description": "所有功能变更完成后，必须主动记录到change_history.json（变更历史），不需要用户提醒。记录内容包括：变更ID、标题、类型、优先级、描述、目标节点、修改文件、关键变更、风险处理、验证结果。",
+      "trigger": "任何功能变更完成后",
+      "enforcement": "强制",
+      "created_at": "2026-09-06T14:28:04.161527"
+    },
+    {
+      "id": "RULE-003",
+      "name": "版本号必须随功能变更升级",
+      "description": "每次功能变更完成后，必须主动升级版本号（前端package.json + 后端版本配置 + 功能链文档），不需要用户提醒。禁止修改了功能但版本号不变。",
+      "trigger": "任何功能变更完成后",
+      "enforcement": "强制",
+      "created_at": "2026-09-06T14:28:04.161529"
+    },
+    {
+      "id": "RULE-004",
+      "name": "修改含中文文件必须用Python脚本指定UTF-8编码",
+      "description": "修改任何包含中文的文件（.json/.md/.py/.vue/.ts等），必须使用Python脚本指定encoding='utf-8'，禁止使用PowerShell Set-Content或其他可能导致编码问题的方式。",
+      "trigger": "修改含中文的文件",
+      "enforcement": "强制",
+      "created_at": "2026-09-06T14:28:04.161530"
+    },
+    {
+      "id": "RULE-005",
+      "name": "数据准确优先，禁止兜底糊弄",
+      "description": "数据显示必须准确，不准确就显示'—'或明确标注，禁止用前一天数据兜底、用缓存数据冒充实时数据、用估算值冒充真实数据。",
+      "trigger": "任何涉及数据显示的功能",
+      "enforcement": "强制",
+      "created_at": "2026-09-06T14:28:04.161530"
+    }
+  ]
+}

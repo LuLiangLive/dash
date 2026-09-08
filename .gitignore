@@ -1,0 +1,66 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 虚拟环境
+venv/
+env/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 日志
+*.log
+logs/
+/tmp/
+
+# 性能测试临时输出
+perf_baseline_result.json
+
+# 云开发配置(开发用)
+.cloudstudio
+
+# 数据库文件(运行时生成,不提交)
+fund.db
+fund.db-shm
+fund.db-wal
+*.db-journal
+
+# 数据目录
+data/fund.db
+data/fund.db-shm
+data/fund.db-wal
+data/*.db-journal

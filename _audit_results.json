@@ -1,0 +1,164 @@
+[
+  {
+    "category": "冗余条件",
+    "file": "modules\\rank\\recommendation.py",
+    "line": 373,
+    "desc": "if up7 >= 6 and dn7 <= 1 and max_daily_drop_7d <= 3.5:"
+  },
+  {
+    "category": "相似字段名",
+    "file": "全局",
+    "line": 0,
+    "desc": "ad_metrics vs metrics（可能是命名不一致）"
+  },
+  {
+    "category": "相似字段名",
+    "file": "全局",
+    "line": 0,
+    "desc": "adj_nav vs nav（可能是命名不一致）"
+  },
+  {
+    "category": "相似字段名",
+    "file": "全局",
+    "line": 0,
+    "desc": "code vs thscode（可能是命名不一致）"
+  },
+  {
+    "category": "相似字段名",
+    "file": "全局",
+    "line": 0,
+    "desc": "d1 vs d10（可能是命名不一致）"
+  },
+  {
+    "category": "相似字段名",
+    "file": "全局",
+    "line": 0,
+    "desc": "d2 vs d20（可能是命名不一致）"
+  },
+  {
+    "category": "相似字段名",
+    "file": "全局",
+    "line": 0,
+    "desc": "d2 vs dd20（可能是命名不一致）"
+  },
+  {
+    "category": "相似字段名",
+    "file": "全局",
+    "line": 0,
+    "desc": "d20 vs dd20（可能是命名不一致）"
+  },
+  {
+    "category": "相似字段名",
+    "file": "全局",
+    "line": 0,
+    "desc": "date vs dates（可能是命名不一致）"
+  },
+  {
+    "category": "相似字段名",
+    "file": "全局",
+    "line": 0,
+    "desc": "date vs nav_date（可能是命名不一致）"
+  },
+  {
+    "category": "相似字段名",
+    "file": "全局",
+    "line": 0,
+    "desc": "dn_cap vs dn_capture（可能是命名不一致）"
+  },
+  {
+    "category": "相似字段名",
+    "file": "全局",
+    "line": 0,
+    "desc": "ftype vs type（可能是命名不一致）"
+  },
+  {
+    "category": "相似字段名",
+    "file": "全局",
+    "line": 0,
+    "desc": "idx_map vs idx_map_f（可能是命名不一致）"
+  },
+  {
+    "category": "相似字段名",
+    "file": "全局",
+    "line": 0,
+    "desc": "max_daily_drop vs max_daily_drop_7d（可能是命名不一致）"
+  },
+  {
+    "category": "相似字段名",
+    "file": "全局",
+    "line": 0,
+    "desc": "nav vs navs（可能是命名不一致）"
+  },
+  {
+    "category": "相似字段名",
+    "file": "全局",
+    "line": 0,
+    "desc": "sh vs shares（可能是命名不一致）"
+  },
+  {
+    "category": "相似字段名",
+    "file": "全局",
+    "line": 0,
+    "desc": "sh vs sharpe（可能是命名不一致）"
+  },
+  {
+    "category": "相似字段名",
+    "file": "全局",
+    "line": 0,
+    "desc": "up_cap vs up_capture（可能是命名不一致）"
+  },
+  {
+    "category": "注释残留旧字段名",
+    "file": "analysis_pipeline\\night_fund_monitor.py",
+    "line": 499,
+    "desc": "# 补 dd7(DB 优先, 否则用 max_daily_drop_7d 兜底)"
+  },
+  {
+    "category": "注释残留旧字段名",
+    "file": "modules\\fund\\fund_metrics.py",
+    "line": 53,
+    "desc": "# v2.9.13: 修复导入错误 - _max_dd/_daily_rets/_pstdev在modules.common.metrics中"
+  },
+  {
+    "category": "注释残留旧字段名",
+    "file": "modules\\rank\\rank_full.py",
+    "line": 365,
+    "desc": "# v0.48.0: dd7 (7日内最大单日跌幅) — 与 md_builder 用名保持一致"
+  },
+  {
+    "category": "注释残留旧字段名",
+    "file": "modules\\rank\\rank_full.py",
+    "line": 1009,
+    "desc": "# 高弹性: beta>阈值 且 up_capture>阈值 且 趋势强度>0（v2.9.12过滤下跌趋势）"
+  },
+  {
+    "category": "注释残留旧字段名",
+    "file": "modules\\rank\\rank_full.py",
+    "line": 1023,
+    "desc": "# 强抗跌: dn_capture<阈值 且 down_vol<dv_mean 且 mdd>阈值"
+  },
+  {
+    "category": "注释残留旧字段名",
+    "file": "modules\\score\\scoring.py",
+    "line": 251,
+    "desc": "# 回撤区间 = 最大回撤段 [peak日, trough日](用 _max_dd 的 seg)"
+  },
+  {
+    "category": "注释残留旧字段名",
+    "file": "scripts\\recompute_dd7.py",
+    "line": 41,
+    "desc": "# 先重算 funds.dd7"
+  },
+  {
+    "category": "注释残留旧字段名",
+    "file": "scripts\\recompute_dd7.py",
+    "line": 50,
+    "desc": "# 同步 rank_snapshots.meta 里的 dd7"
+  },
+  {
+    "category": "字段名与变量名不一致",
+    "file": "modules/rank\\rank_full.py",
+    "line": 1477,
+    "desc": "\"attack\": panels_attack"
+  }
+]

@@ -1,0 +1,155 @@
+# ============================================================
+# 后端 Python 项目配置文件
+# 包含代码格式化（Black）、Lint检查（Ruff）、
+# 测试配置（pytest）和覆盖率配置（coverage.py）
+# ============================================================
+
+# ------------------------------------------------------------
+# Black 代码格式化配置
+# 用于统一 Python 代码风格，CI 中通过 black --check 验证
+# ------------------------------------------------------------
+[tool.black]
+line-length = 120                          # 最大行宽 120 字符
+target-version = ['py310']                 # 目标 Python 版本
+include = '\.pyi?$'                        # 检查 .py 和 .pyi 文件
+extend-exclude = '''
+(
+  _archive/
+  | _archive_temp_scripts/
+  | scripts/
+  | tests/
+  | __pycache__/
+  | \.pytest_cache/
+  | backups/
+  | data/
+  | uploads/
+  | static/
+)
+'''
+
+# ------------------------------------------------------------
+# Ruff Lint 检查配置
+# 替代 flake8，速度更快，规则更丰富
+# CI 中通过 ruff check backend/ 验证
+# ------------------------------------------------------------
+[tool.ruff]
+line-length = 120                          # 最大行宽 120 字符（与 Black 保持一致）
+target-version = "py310"                   # 目标 Python 版本
+extend-exclude = [
+    "_archive/",
+    "_archive_temp_scripts/",
+    "scripts/",
+    "tests/",
+    "__pycache__/",
+    ".pytest_cache/",
+    "backups/",
+    "data/",
+    "uploads/",
+    "static/",
+]
+
+# Ruff Lint 规则选择
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors - 代码风格错误
+    "W",   # pycodestyle warnings - 代码风格警告
+    "F",   # pyflakes - 未使用变量/导入等逻辑检查
+    "I",   # isort - 导入排序
+    "N",   # pep8-naming - 命名规范
+    "UP",  # pyupgrade - 旧语法升级建议
+    "B",   # flake8-bugbear - 常见 bug 模式检测
+    "SIM", # flake8-simplify - 代码简化建议
+]
+ignore = [
+    "E501",  # line too long - 行宽由 Black 管理，Ruff 不重复检查
+    "B008",  # do not perform function call in argument defaults - FastAPI 依赖注入常用模式
+    "UP006", # use `list` instead of `List` for type annotations - 兼容旧代码
+    "UP007", # use `X | Y` instead of `Union` - 兼容旧代码
+]
+
+# 按文件忽略特定规则
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]                   # __init__.py 中允许未使用的导入（用于导出）
+"main.py" = ["B008"]                        # main.py 中允许函数调用作为默认参数（FastAPI 模式）
+"config.py" = ["B008"]                      # config.py 中允许函数调用作为默认参数
+"db.py" = ["B008"]                          # db.py 中允许函数调用作为默认参数
+
+# Ruff 格式化配置（与 Black 兼容）
+[tool.ruff.format]
+quote-style = "double"                      # 使用双引号
+indent-style = "space"                      # 使用空格缩进
+
+# ------------------------------------------------------------
+# pytest 测试配置
+# CI 中通过 python -m pytest 运行测试
+# ------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]                       # 测试文件所在目录
+python_files = ["test_*.py"]                # 测试文件命名模式
+python_classes = ["Test*"]                  # 测试类命名模式
+python_functions = ["test_*"]               # 测试函数命名模式
+addopts = [
+    "-v",                                    # 详细输出
+    "--tb=short",                            # 简短回溯信息
+    "--strict-markers",                      # 严格标记检查
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",           # 忽略弃用警告
+    "ignore::PendingDeprecationWarning",    # 忽略待弃用警告
+]
+# 测试标记（用于选择性运行测试）
+markers = [
+    "smoke: 冒烟测试 - 核心功能快速验证",
+    "regression: 回归测试 - 完整功能验证",
+    "contract: API契约测试 - 前后端数据格式验证",
+    "performance: 性能测试 - 算法性能验证",
+    "integration: 集成测试 - 模块间交互验证",
+    "unit: 单元测试 - 单个函数/模块验证",
+]
+
+# ------------------------------------------------------------
+# Coverage.py 覆盖率配置
+# CI 中通过 pytest --cov=backend 生成覆盖率报告
+# 阈值：行覆盖率 ≥ 70%，分支覆盖率 ≥ 60%
+# ------------------------------------------------------------
+[tool.coverage.run]
+source = ["backend"]                        # 统计覆盖率的源代码目录（从项目根目录运行时生效）
+branch = true                               # 启用分支覆盖率统计
+omit = [                                    # 排除以下文件/目录（路径相对于 backend/ 目录）
+    "tests/*",
+    "_archive/*",
+    "_archive_temp_scripts/*",
+    "scripts/*",
+    "backups/*",
+    "data/*",
+    "uploads/*",
+    "static/*",
+    "*/__pycache__/*",
+    "*/.pytest_cache/*",
+    "migrate_db.py",
+    "run_server.py",
+    "start_fetch.py",
+    "start_recompute.py",
+    "_tmp_fix_fund_router.py",
+    "_apply_indexes.py",
+    "_analyze_db.py",
+]
+
+[tool.coverage.report]
+fail_under = 70                             # 总覆盖率低于 70% 则失败（含分支统计）
+show_missing = true                         # 显示未覆盖的行号
+skip_covered = false                        # 不跳过已完全覆盖的文件
+exclude_lines = [                           # 排除以下行不纳入覆盖率统计
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "import.*_archive",
+]
+
+[tool.coverage.xml]
+output = "coverage.xml"                     # XML 格式报告输出路径（用于 Codecov 等工具）
+
+[tool.coverage.html]
+directory = "htmlcov"                       # HTML 格式报告输出目录

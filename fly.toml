@@ -1,0 +1,48 @@
+# fly.toml —— 投研看板 Fly.io 部署配置
+# 首次部署前需修改：
+#   1. app = "你的应用名"（全局唯一）
+#   2. 运行 fly launch 或 fly deploy 自动创建 volume
+#
+# 常用命令：
+#   fly launch     # 首次部署（自动创建 app + volume）
+#   fly deploy     # 更新部署
+#   fly logs       # 查看日志
+#   fly ssh console # SSH 进入容器
+
+app = "touyan-board"
+primary_region = "hkg"  # 香港，国内访问延迟低
+
+[build]
+  # 使用根目录 Dockerfile
+
+[env]
+  DB_PATH = "/data/fund.db"
+  TZ = "Asia/Shanghai"
+  REQUIRE_READ_KEY = "0"  # 公开访问，不强制 API Key
+  PORT = "8080"
+  FULL_MARKET = "1"
+  COLLECT_MAX = "6000"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false   # 不自动停止（SQLite 需要持续运行；设为 true 可省钱但有冷启动）
+  auto_start_machines = true
+  min_machines_running = 1
+  max_machines_running = 1     # 单实例（SQLite 不支持多写）
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 20
+    hard_limit = 30
+
+[[mounts]]
+  source = "touyan_data"
+  destination = "/data"
+
+[http_service.health_checks]
+  [http_service.health_checks.health]
+    path = "/api/health"
+    interval = "30s"
+    timeout = "10s"
+    grace_period = "60s"  # 首次启动需导入种子数据，给足时间

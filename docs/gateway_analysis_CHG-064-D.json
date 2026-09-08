@@ -1,0 +1,332 @@
+{
+  "change_id": "CHG-064-D",
+  "core_nodes": [
+    "compare",
+    "rank_calc",
+    "metrics_calc"
+  ],
+  "forward_affected": [
+    "chain_doc",
+    "compare",
+    "compare_page",
+    "fund_card",
+    "fund_modal",
+    "metrics_calc",
+    "rank_api",
+    "rank_calc",
+    "rank_page",
+    "score_calc",
+    "settings"
+  ],
+  "backward_affected": [
+    "algo_config",
+    "change_gateway",
+    "change_recorder",
+    "compare",
+    "data_quality",
+    "data_source",
+    "fund_universe",
+    "global_ui",
+    "holdings_fetch",
+    "metrics_calc",
+    "mine_page",
+    "nav_fetch",
+    "one_click_update",
+    "rank_calc",
+    "systematic-debugging",
+    "ui_design",
+    "ui_issues_tracker",
+    "ui_quality_check",
+    "using-git-worktrees",
+    "version_mgmt",
+    "watchlist"
+  ],
+  "forward_depth": {
+    "compare": 0,
+    "rank_calc": 0,
+    "metrics_calc": 0,
+    "compare_page": 1,
+    "chain_doc": 1,
+    "rank_page": 1,
+    "settings": 1,
+    "fund_card": 1,
+    "rank_api": 1,
+    "fund_modal": 1,
+    "score_calc": 2
+  },
+  "backward_depth": {
+    "compare": 0,
+    "rank_calc": 0,
+    "metrics_calc": 0,
+    "watchlist": 1,
+    "fund_universe": 1,
+    "holdings_fetch": 1,
+    "one_click_update": 1,
+    "algo_config": 1,
+    "data_quality": 1,
+    "change_gateway": 1,
+    "nav_fetch": 1,
+    "data_source": 2,
+    "mine_page": 2,
+    "version_mgmt": 2,
+    "using-git-worktrees": 2,
+    "ui_quality_check": 2,
+    "ui_design": 3,
+    "global_ui": 3,
+    "ui_issues_tracker": 3,
+    "change_recorder": 3,
+    "systematic-debugging": 3
+  },
+  "risks": [
+    {
+      "id": "RISK-001",
+      "level": "HIGH",
+      "description": "变更影响范围过大，共影响 29 个节点（正向11+反向21）",
+      "impact": "大范围影响可能导致多处功能异常，回归测试成本高，遗漏风险大",
+      "mitigation": "1. 拆分变更为多个小变更；2. 优先执行全量回归测试；3. 重点验证深度传播路径上的节点；4. 考虑灰度发布"
+    },
+    {
+      "id": "RISK-002",
+      "level": "HIGH",
+      "description": "变更涉及 7 个核心业务层节点: ['algo_config', 'compare', 'one_click_update', 'rank_api', 'rank_calc']",
+      "impact": "核心业务层直接影响基金计算、榜单、自选等核心功能，异常会导致用户可见的功能故障",
+      "mitigation": "1. 对所有涉及的业务层节点执行专项测试；2. 验证核心计算结果的准确性；3. 对比变更前后的数据一致性；4. 准备数据回滚方案"
+    },
+    {
+      "id": "RISK-003",
+      "level": "MEDIUM",
+      "description": "变更影响 3 个API接口相关节点: ['change_gateway', 'rank_api', 'rank_calc']",
+      "impact": "API接口变更可能导致前端调用失败、接口兼容性问题或性能下降",
+      "mitigation": "1. 验证API接口的向后兼容性；2. 检查接口返回格式和状态码；3. 执行接口性能测试；4. 更新API文档"
+    },
+    {
+      "id": "RISK-004",
+      "level": "MEDIUM",
+      "description": "变更影响传播深度较远（正向最大深度2，反向最大深度3）",
+      "impact": "深层传播路径上的间接影响容易被忽略，可能导致隐蔽的功能异常",
+      "mitigation": "1. 追踪完整的传播路径并验证；2. 重点关注深度>=2的间接影响节点；3. 执行端到端链路测试"
+    },
+    {
+      "id": "RISK-005",
+      "level": "MEDIUM",
+      "description": "变更同时产生较大的正向（11节点）和反向（21节点）影响",
+      "impact": "双向影响意味着变更处于核心位置，上下游都可能受影响，测试复杂度高",
+      "mitigation": "1. 分别验证正向和反向影响路径；2. 确认变更节点的接口契约；3. 执行完整的依赖链路测试"
+    }
+  ],
+  "checklist": [
+    {
+      "id": "CHK-CHG-064-D-001",
+      "stage": "modify",
+      "description": "确认核心节点 ['compare', 'rank_calc', 'metrics_calc'] 的代码修改已完成，且修改范围与变更描述一致",
+      "priority": "must",
+      "status": "pending",
+      "verified": false
+    },
+    {
+      "id": "CHK-CHG-064-D-002",
+      "stage": "modify",
+      "description": "评估是否需要拆分变更为多个小变更以降低风险",
+      "priority": "must",
+      "status": "pending",
+      "verified": false
+    },
+    {
+      "id": "CHK-CHG-064-D-003",
+      "stage": "verify",
+      "description": "执行核心功能冒烟测试，确认基本功能正常",
+      "priority": "must",
+      "status": "pending",
+      "verified": false
+    },
+    {
+      "id": "CHK-CHG-064-D-004",
+      "stage": "verify",
+      "description": "验证 7 个核心业务层节点的功能正确性，对比变更前后数据一致性",
+      "priority": "must",
+      "status": "pending",
+      "verified": false
+    },
+    {
+      "id": "CHK-CHG-064-D-005",
+      "stage": "verify",
+      "description": "验证API接口的向后兼容性，检查返回格式和状态码",
+      "priority": "must",
+      "status": "pending",
+      "verified": false
+    },
+    {
+      "id": "CHK-CHG-064-D-006",
+      "stage": "verify",
+      "description": "执行影响范围内所有节点的定向回归测试",
+      "priority": "must",
+      "status": "pending",
+      "verified": false
+    },
+    {
+      "id": "CHK-CHG-064-D-007",
+      "stage": "verify",
+      "description": "执行端到端链路测试，覆盖完整的正向和反向传播路径",
+      "priority": "must",
+      "status": "pending",
+      "verified": false
+    },
+    {
+      "id": "CHK-CHG-064-D-008",
+      "stage": "verify",
+      "description": "确认无新增的已知问题（known_issues），或已有问题已记录",
+      "priority": "should",
+      "status": "pending",
+      "verified": false
+    },
+    {
+      "id": "CHK-CHG-064-D-009",
+      "stage": "update",
+      "description": "确认是否需要更新function_graph.json（新增/修改节点或边）",
+      "priority": "should",
+      "status": "pending",
+      "verified": false
+    },
+    {
+      "id": "CHK-CHG-064-D-010",
+      "stage": "update",
+      "description": "更新function_graph.json中相关节点的last_verified和verify_result字段",
+      "priority": "should",
+      "status": "pending",
+      "verified": false
+    },
+    {
+      "id": "CHK-CHG-064-D-011",
+      "stage": "record",
+      "description": "记录变更到change_history.json，包含完整的变更信息和影响范围",
+      "priority": "must",
+      "status": "pending",
+      "verified": false
+    },
+    {
+      "id": "CHK-CHG-064-D-012",
+      "stage": "record",
+      "description": "升级版本号（config.py中的APP_VERSION），确认版本号格式正确",
+      "priority": "must",
+      "status": "pending",
+      "verified": false
+    },
+    {
+      "id": "CHK-CHG-064-D-013",
+      "stage": "record",
+      "description": "在变更记录中详细描述风险点和缓解措施的执行情况",
+      "priority": "should",
+      "status": "pending",
+      "verified": false
+    },
+    {
+      "id": "CHK-CHG-064-D-014",
+      "stage": "record",
+      "description": "确认检查清单中所有must项已完成验证",
+      "priority": "must",
+      "status": "pending",
+      "verified": false
+    }
+  ],
+  "stats": {
+    "forward_node_count": 11,
+    "backward_node_count": 21,
+    "total_affected_count": 29,
+    "overlap_count": 3,
+    "forward_depth_distribution": {
+      "0": 3,
+      "1": 7,
+      "2": 1
+    },
+    "backward_depth_distribution": {
+      "0": 3,
+      "1": 8,
+      "2": 5,
+      "3": 5
+    },
+    "affected_code_files": [
+      "_pack.py",
+      "backend/algo_config.py",
+      "backend/analysis_pipeline/night_fund_monitor.py",
+      "backend/collector/hithink_client.py",
+      "backend/collector/metrics.py",
+      "backend/config.py",
+      "backend/docs/CHAIN_TEST_MANUAL.md",
+      "backend/main.py",
+      "backend/modules/common/data_quality.py",
+      "backend/modules/common/fetch_manager.py",
+      "backend/modules/common/metrics.py",
+      "backend/modules/common/pipeline.py",
+      "backend/modules/fund/holdings.py",
+      "backend/modules/fund/pingzhong.py",
+      "backend/modules/fund/universe.py",
+      "backend/modules/nav/fetcher.py",
+      "backend/modules/nav/history_backfill.py",
+      "backend/modules/nav/multi_source_fetcher.py",
+      "backend/modules/rank/rank_full.py",
+      "backend/modules/rank/ranker.py",
+      "backend/modules/rank/router.py",
+      "backend/modules/score/score_service.py",
+      "backend/modules/score/scoring.py",
+      "backend/modules/score/scoring_v3.py",
+      "backend/modules/superpower/change_recorder.py",
+      "backend/modules/system/router.py",
+      "src/components/AppHeader.vue (顶部导航栏)",
+      "src/components/ComparePanel.vue",
+      "src/components/FundCard.vue",
+      "src/components/FundCard.vue (基金卡片组件)",
+      "src/components/FundDetailModal.vue",
+      "src/components/SettingsPanel.vue",
+      "src/components/settings/AlgoConfigPanel.vue",
+      "src/stores/watch.ts",
+      "src/styles/index.scss (核心：v1+v2设计令牌系统)",
+      "src/utils/version.ts",
+      "src/views/CompareView.vue",
+      "src/views/FunctionGraphView.vue",
+      "src/views/FundView.vue",
+      "src/views/LogView.vue",
+      "src/views/MineView.vue",
+      "src/views/MonitorView.vue",
+      "src/views/PortfolioDetailView.vue (持仓详情+底部操作栏)",
+      "src/views/WatchView.vue"
+    ],
+    "affected_file_count": 44,
+    "forward_internal_edges": 26,
+    "backward_internal_edges": 45,
+    "layer_distribution": {
+      "data": 6,
+      "process": 2,
+      "business": 7,
+      "system": 4,
+      "display": 7,
+      "unknown": 3
+    },
+    "business_layer_nodes": [
+      "algo_config",
+      "compare",
+      "one_click_update",
+      "rank_api",
+      "rank_calc",
+      "score_calc",
+      "watchlist"
+    ],
+    "business_layer_count": 7,
+    "db_related_nodes": [],
+    "db_related_count": 0,
+    "api_related_nodes": [
+      "change_gateway",
+      "rank_api",
+      "rank_calc"
+    ],
+    "api_related_count": 3,
+    "change_title": "后端compare清理和meta死字段删除（dn_ratio/up7/cs/dd7/rtag/status）",
+    "valid_core_nodes": [
+      "compare",
+      "rank_calc",
+      "metrics_calc"
+    ],
+    "missing_nodes": [],
+    "graph_version": "2.10.2"
+  },
+  "generated_at": "2026-09-08T03:35:21.632763"
+}
