@@ -101,7 +101,7 @@ class Settings:
     @property
     def port(self) -> int:
         """API 服务端口。"""
-        return _env_int("PORT", 8080)
+        return _env_int("PORT", 7860)
 
     # ── 采集配置 ──────────────────────────────────────────────
     @property

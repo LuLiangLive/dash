@@ -12,5 +12,5 @@ import uvicorn
 
 import main  # 导入即加载 FastAPI app 及顶层依赖
 
-PORT = int(os.environ.get("PORT", "8080"))
+PORT = int(os.environ.get("PORT", "7860"))
 uvicorn.run(main.app, host="0.0.0.0", port=PORT)
